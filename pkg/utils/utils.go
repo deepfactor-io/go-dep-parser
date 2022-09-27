@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	"github.com/aquasecurity/go-dep-parser/pkg/types"
+	"github.com/deepfactor-io/go-dep-parser/pkg/types"
 )
 
 func UniqueStrings(ss []string) []string {

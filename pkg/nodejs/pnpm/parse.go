@@ -7,9 +7,9 @@ import (
 	"golang.org/x/xerrors"
 	"gopkg.in/yaml.v3"
 
-	dio "github.com/aquasecurity/go-dep-parser/pkg/io"
+	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
 
-	"github.com/aquasecurity/go-dep-parser/pkg/types"
+	"github.com/deepfactor-io/go-dep-parser/pkg/types"
 )
 
 type PackageResolution struct {
