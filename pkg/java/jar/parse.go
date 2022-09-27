@@ -163,7 +163,7 @@ func (p *Parser) parseArtifact(fileName string, size int64, r dio.ReadSeekerAt) 
 
 	manifestProps := m.properties()
 
-	if (manifestProps.groupID != "" || manifestProps.artifactID != "") && manifestProps.version != "" {
+	if manifestProps.groupID != "" || manifestProps.artifactID != "" || manifestProps.version != "" {
 		partialGAVInfoExist = true
 	}
 	if p.offline {
@@ -210,10 +210,9 @@ func (p *Parser) parseArtifact(fileName string, size int64, r dio.ReadSeekerAt) 
 		log.Logger.Debugw("POM was determined in a heuristic way", zap.String("file", fileName),
 			zap.String("artifact", fileProps.String()))
 		libs = append(libs, fileProps.library())
+	} else if partialGAVInfoExist {
+		return append(libs, manifestProps.library()), nil, nil
 	} else if !xerrors.Is(err, ArtifactNotFoundErr) {
-		if partialGAVInfoExist {
-			return append(libs, manifestProps.library()), nil, nil
-		}
 		return nil, nil, xerrors.Errorf("failed to search by artifact id: %w", err)
 	}
 
