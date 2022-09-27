@@ -159,21 +159,12 @@ func (p *Parser) parseArtifact(fileName string, size int64, r dio.ReadSeekerAt) 
 		return libs, nil, nil
 	}
 
-	partialGAVInfoExist := false
-
 	manifestProps := m.properties()
 
-	if manifestProps.groupID != "" || manifestProps.artifactID != "" || manifestProps.version != "" {
-		partialGAVInfoExist = true
-	}
 	if p.offline {
 		// In offline mode, we will not check if the artifact information is correct.
 		if !manifestProps.valid() {
 			log.Logger.Debugw("Unable to identify POM in offline mode", zap.String("file", fileName))
-			if partialGAVInfoExist {
-				return append(libs, manifestProps.library()), nil, nil
-			}
-			return libs, nil, nil
 		}
 		return append(libs, manifestProps.library()), nil, nil
 	}
@@ -197,10 +188,7 @@ func (p *Parser) parseArtifact(fileName string, size int64, r dio.ReadSeekerAt) 
 
 	// Return when artifactId or version from the file name are empty
 	if fileProps.artifactID == "" || fileProps.version == "" {
-		if partialGAVInfoExist {
-			return append(libs, manifestProps.library()), nil, nil
-		}
-		return libs, nil, nil
+		return append(libs, manifestProps.library()), nil, nil
 	}
 
 	// Try to search groupId by artifactId via sonatype API
@@ -210,10 +198,8 @@ func (p *Parser) parseArtifact(fileName string, size int64, r dio.ReadSeekerAt) 
 		log.Logger.Debugw("POM was determined in a heuristic way", zap.String("file", fileName),
 			zap.String("artifact", fileProps.String()))
 		libs = append(libs, fileProps.library())
-	} else if partialGAVInfoExist {
+	} else {
 		return append(libs, manifestProps.library()), nil, nil
-	} else if !xerrors.Is(err, ArtifactNotFoundErr) {
-		return nil, nil, xerrors.Errorf("failed to search by artifact id: %w", err)
 	}
 
 	return libs, nil, nil
