@@ -20,9 +20,9 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/xerrors"
 
-	dio "github.com/aquasecurity/go-dep-parser/pkg/io"
-	"github.com/aquasecurity/go-dep-parser/pkg/log"
-	"github.com/aquasecurity/go-dep-parser/pkg/types"
+	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
+	"github.com/deepfactor-io/go-dep-parser/pkg/log"
+	"github.com/deepfactor-io/go-dep-parser/pkg/types"
 )
 
 const (
@@ -160,11 +160,11 @@ func (p *Parser) parseArtifact(fileName string, size int64, r dio.ReadSeekerAt) 
 	}
 
 	manifestProps := m.properties()
+
 	if p.offline {
 		// In offline mode, we will not check if the artifact information is correct.
 		if !manifestProps.valid() {
 			log.Logger.Debugw("Unable to identify POM in offline mode", zap.String("file", fileName))
-			return libs, nil, nil
 		}
 		return append(libs, manifestProps.library()), nil, nil
 	}
@@ -182,15 +182,13 @@ func (p *Parser) parseArtifact(fileName string, size int64, r dio.ReadSeekerAt) 
 	props, err := p.searchBySHA1(r)
 	if err == nil {
 		return append(libs, props.library()), nil, nil
-	} else if !xerrors.Is(err, ArtifactNotFoundErr) {
-		return nil, nil, xerrors.Errorf("failed to search by SHA1: %w", err)
 	}
 
 	log.Logger.Debugw("No such POM in the central repositories", zap.String("file", fileName))
 
 	// Return when artifactId or version from the file name are empty
 	if fileProps.artifactID == "" || fileProps.version == "" {
-		return libs, nil, nil
+		return append(libs, manifestProps.library()), nil, nil
 	}
 
 	// Try to search groupId by artifactId via sonatype API
@@ -200,8 +198,8 @@ func (p *Parser) parseArtifact(fileName string, size int64, r dio.ReadSeekerAt) 
 		log.Logger.Debugw("POM was determined in a heuristic way", zap.String("file", fileName),
 			zap.String("artifact", fileProps.String()))
 		libs = append(libs, fileProps.library())
-	} else if !xerrors.Is(err, ArtifactNotFoundErr) {
-		return nil, nil, xerrors.Errorf("failed to search by artifact id: %w", err)
+	} else {
+		return append(libs, manifestProps.library()), nil, nil
 	}
 
 	return libs, nil, nil
@@ -373,20 +371,11 @@ type apiResponse struct {
 }
 
 func (m manifest) properties() properties {
-	groupID, err := m.determineGroupID()
-	if err != nil {
-		return properties{}
-	}
+	groupID, _ := m.determineGroupID()
 
-	artifactID, err := m.determineArtifactID()
-	if err != nil {
-		return properties{}
-	}
+	artifactID, _ := m.determineArtifactID()
 
-	version, err := m.determineVersion()
-	if err != nil {
-		return properties{}
-	}
+	version, _ := m.determineVersion()
 
 	return properties{
 		groupID:    groupID,

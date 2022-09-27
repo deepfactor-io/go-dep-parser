@@ -1,6 +1,6 @@
 package mod
 
-import "github.com/aquasecurity/go-dep-parser/pkg/types"
+import "github.com/deepfactor-io/go-dep-parser/pkg/types"
 
 var (
 	// execute go mod tidy in normal folder

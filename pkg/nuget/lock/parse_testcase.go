@@ -1,6 +1,6 @@
 package lock
 
-import "github.com/aquasecurity/go-dep-parser/pkg/types"
+import "github.com/deepfactor-io/go-dep-parser/pkg/types"
 
 var (
 	// docker run --rm -i -t mcr.microsoft.com/dotnet/sdk:latest

@@ -1,4 +1,4 @@
-module github.com/aquasecurity/go-dep-parser
+module github.com/deepfactor-io/go-dep-parser
 
 go 1.18
 

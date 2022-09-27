@@ -1,6 +1,6 @@
 package poetry
 
-import "github.com/aquasecurity/go-dep-parser/pkg/types"
+import "github.com/deepfactor-io/go-dep-parser/pkg/types"
 
 var (
 	// docker run --name pipenv --rm -it python:3.9-alpine sh
