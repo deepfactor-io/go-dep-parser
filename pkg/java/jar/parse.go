@@ -176,10 +176,14 @@ func (p *Parser) parseArtifact(fileName string, size int64, r dio.ReadSeekerAt) 
 	if manifestProps.valid() {
 		// Even if MANIFEST.MF is found, the groupId and artifactId might not be valid.
 		// We have to make sure that the artifact exists actually.
-		if ok, err := p.exists(manifestProps); ok {
+		var ok bool
+		var err error
+		if ok, err = p.exists(manifestProps); ok {
 			// If groupId and artifactId are valid, they will be returned.
 			return append(libs, manifestProps.library()), nil, nil
-		} else if err != nil && strings.Contains(err.Error(), utils.JAVA_ARTIFACT_PARSER_ERROR) {
+		}
+
+		if err != nil && strings.Contains(err.Error(), utils.JAVA_ARTIFACT_PARSER_ERROR) {
 			finalError += "manifest validation error: " + err.Error()
 		}
 	}
@@ -188,7 +192,9 @@ func (p *Parser) parseArtifact(fileName string, size int64, r dio.ReadSeekerAt) 
 	props, err := p.searchBySHA1(r)
 	if err == nil {
 		return append(libs, props.library()), nil, nil
-	} else if strings.Contains(err.Error(), utils.JAVA_ARTIFACT_PARSER_ERROR) {
+	}
+
+	if strings.Contains(err.Error(), utils.JAVA_ARTIFACT_PARSER_ERROR) {
 		finalError += ";search by SHA1 error: " + err.Error()
 	}
 
@@ -209,7 +215,10 @@ func (p *Parser) parseArtifact(fileName string, size int64, r dio.ReadSeekerAt) 
 		log.Logger.Debugw("POM was determined in a heuristic way", zap.String("file", fileName),
 			zap.String("artifact", fileProps.String()))
 		libs = append(libs, fileProps.library())
-	} else if strings.Contains(err.Error(), utils.JAVA_ARTIFACT_PARSER_ERROR) {
+		return libs, nil, nil
+	}
+
+	if strings.Contains(err.Error(), utils.JAVA_ARTIFACT_PARSER_ERROR) {
 		finalError += ";search by ArtifactID error: " + err.Error()
 		return append(libs, manifestProps.library()), nil, errors.New(finalError)
 	}
