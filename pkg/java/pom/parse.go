@@ -500,7 +500,7 @@ func (p parser) fetchPOMFromRemoteRepository(paths []string) (*pom, error) {
 
 		content, err := parsePom(resp.Body)
 		if err != nil {
-			return nil, xerrors.Errorf("%s failed to parse the remote POM: %w", utils.JAVA_ARTIFACT_PARSER_ERROR, err)
+			return nil, xerrors.Errorf("failed to parse the remote POM: %w", err)
 		}
 
 		return &pom{
@@ -508,7 +508,7 @@ func (p parser) fetchPOMFromRemoteRepository(paths []string) (*pom, error) {
 			content:  content,
 		}, nil
 	}
-	return nil, xerrors.Errorf("%s the POM was not found in remote remoteRepositories", utils.JAVA_ARTIFACT_PARSER_ERROR)
+	return nil, xerrors.Errorf("the POM was not found in remote remoteRepositories")
 }
 
 func parsePom(r io.Reader) (*pomXML, error) {
