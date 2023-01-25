@@ -467,12 +467,12 @@ func (p *Parser) exists(props properties) (bool, error) {
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
-		return false, xerrors.Errorf("http error: %w", err)
+		return false, xerrors.Errorf("%s http error: %w", utils.JAVA_ARTIFACT_PARSER_ERROR, err)
 	}
 	defer resp.Body.Close()
 
 	if utils.IsRetryableError(resp.StatusCode) {
-		return false, errors.New(utils.JAVA_ARTIFACT_PARSER_ERROR)
+		return false, errors.New(utils.JAVA_ARTIFACT_PARSER_ERROR + "Status Code:" + fmt.Sprint(resp.StatusCode))
 	}
 
 	var res apiResponse
@@ -506,13 +506,13 @@ func (p *Parser) searchBySHA1(r io.ReadSeeker) (properties, error) {
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
-		return properties{}, xerrors.Errorf("sha1 search error: %w", err)
+		return properties{}, xerrors.Errorf("%s sha1 search error: %w", utils.JAVA_ARTIFACT_PARSER_ERROR, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		if utils.IsRetryableError(resp.StatusCode) {
-			return properties{}, errors.New(utils.JAVA_ARTIFACT_PARSER_ERROR)
+			return properties{}, errors.New(utils.JAVA_ARTIFACT_PARSER_ERROR + "Status Code:" + fmt.Sprint(resp.StatusCode))
 		}
 		return properties{}, xerrors.Errorf("status %s from %s", resp.Status, req.URL.String())
 	}
@@ -555,13 +555,13 @@ func (p *Parser) searchByArtifactID(artifactID string) (string, error) {
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
-		return "", xerrors.Errorf("artifactID search error: %w", err)
+		return "", xerrors.Errorf("%s artifactID search error: %w", utils.JAVA_ARTIFACT_PARSER_ERROR, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		if utils.IsRetryableError(resp.StatusCode) {
-			return "", errors.New(utils.JAVA_ARTIFACT_PARSER_ERROR)
+			return "", errors.New(utils.JAVA_ARTIFACT_PARSER_ERROR + "Status Code:" + fmt.Sprint(resp.StatusCode))
 		}
 		return "", xerrors.Errorf("status %s from %s", resp.Status, req.URL.String())
 	}
