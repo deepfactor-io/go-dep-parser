@@ -2,9 +2,24 @@ package utils
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/deepfactor-io/go-dep-parser/pkg/types"
 )
+
+const JAVA_ARTIFACT_PARSER_ERROR = "JAVA_ARTIFACT_PARSER_ERROR:"
+
+func IsRetryableError(statusCode int) bool {
+	if statusCode == http.StatusTooManyRequests {
+		return true
+	}
+
+	if statusCode == 0 || (statusCode >= 500 && statusCode != http.StatusNotImplemented) {
+		return true
+	}
+
+	return false
+}
 
 func UniqueStrings(ss []string) []string {
 	var results []string

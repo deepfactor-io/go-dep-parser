@@ -6,6 +6,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -23,6 +24,7 @@ import (
 	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
 	"github.com/deepfactor-io/go-dep-parser/pkg/log"
 	"github.com/deepfactor-io/go-dep-parser/pkg/types"
+	"github.com/deepfactor-io/go-dep-parser/pkg/utils"
 )
 
 const (
@@ -83,8 +85,8 @@ func NewParser(opts ...Option) types.Parser {
 	retryClient := retryablehttp.NewClient()
 	retryClient.Logger = logger{}
 	retryClient.RetryWaitMin = 20 * time.Second
-	retryClient.RetryWaitMax = 5 * time.Minute
-	retryClient.RetryMax = 5
+	retryClient.RetryWaitMax = 3 * time.Minute
+	retryClient.RetryMax = 3
 	client := retryClient.StandardClient()
 
 	// attempt to read the maven central api url from os environment, if it's
@@ -112,6 +114,8 @@ func (p *Parser) Parse(r dio.ReadSeekerAt) ([]types.Library, []types.Dependency,
 
 func (p *Parser) parseArtifact(fileName string, size int64, r dio.ReadSeekerAt) ([]types.Library, []types.Dependency, error) {
 	log.Logger.Debugw("Parsing Java artifacts...", zap.String("file", fileName))
+
+	var finalError string
 
 	zr, err := zip.NewReader(r, size)
 	if err != nil {
@@ -172,9 +176,15 @@ func (p *Parser) parseArtifact(fileName string, size int64, r dio.ReadSeekerAt) 
 	if manifestProps.valid() {
 		// Even if MANIFEST.MF is found, the groupId and artifactId might not be valid.
 		// We have to make sure that the artifact exists actually.
-		if ok, _ := p.exists(manifestProps); ok {
+		var ok bool
+		var err error
+		if ok, err = p.exists(manifestProps); ok {
 			// If groupId and artifactId are valid, they will be returned.
 			return append(libs, manifestProps.library()), nil, nil
+		}
+
+		if err != nil && strings.Contains(err.Error(), utils.JAVA_ARTIFACT_PARSER_ERROR) {
+			finalError += "manifest validation error: " + err.Error()
 		}
 	}
 
@@ -184,11 +194,18 @@ func (p *Parser) parseArtifact(fileName string, size int64, r dio.ReadSeekerAt) 
 		return append(libs, props.library()), nil, nil
 	}
 
+	if strings.Contains(err.Error(), utils.JAVA_ARTIFACT_PARSER_ERROR) {
+		finalError += ";search by SHA1 error: " + err.Error()
+	}
+
 	log.Logger.Debugw("No such POM in the central repositories", zap.String("file", fileName))
 
 	// Return when artifactId or version from the file name are empty
 	if fileProps.artifactID == "" || fileProps.version == "" {
-		return append(libs, manifestProps.library()), nil, nil
+		if len(finalError) == 0 {
+			return append(libs, manifestProps.library()), nil, nil
+		}
+		return append(libs, manifestProps.library()), nil, errors.New(finalError)
 	}
 
 	// Try to search groupId by artifactId via sonatype API
@@ -198,8 +215,12 @@ func (p *Parser) parseArtifact(fileName string, size int64, r dio.ReadSeekerAt) 
 		log.Logger.Debugw("POM was determined in a heuristic way", zap.String("file", fileName),
 			zap.String("artifact", fileProps.String()))
 		libs = append(libs, fileProps.library())
-	} else {
-		return append(libs, manifestProps.library()), nil, nil
+		return libs, nil, nil
+	}
+
+	if strings.Contains(err.Error(), utils.JAVA_ARTIFACT_PARSER_ERROR) {
+		finalError += ";search by ArtifactID error: " + err.Error()
+		return append(libs, manifestProps.library()), nil, errors.New(finalError)
 	}
 
 	return libs, nil, nil
@@ -450,6 +471,10 @@ func (p *Parser) exists(props properties) (bool, error) {
 	}
 	defer resp.Body.Close()
 
+	if utils.IsRetryableError(resp.StatusCode) {
+		return false, errors.New(utils.JAVA_ARTIFACT_PARSER_ERROR)
+	}
+
 	var res apiResponse
 	if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return false, xerrors.Errorf("json decode error: %w", err)
@@ -486,6 +511,9 @@ func (p *Parser) searchBySHA1(r io.ReadSeeker) (properties, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		if utils.IsRetryableError(resp.StatusCode) {
+			return properties{}, errors.New(utils.JAVA_ARTIFACT_PARSER_ERROR)
+		}
 		return properties{}, xerrors.Errorf("status %s from %s", resp.Status, req.URL.String())
 	}
 
@@ -532,6 +560,9 @@ func (p *Parser) searchByArtifactID(artifactID string) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		if utils.IsRetryableError(resp.StatusCode) {
+			return "", errors.New(utils.JAVA_ARTIFACT_PARSER_ERROR)
+		}
 		return "", xerrors.Errorf("status %s from %s", resp.Status, req.URL.String())
 	}
 
