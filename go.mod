@@ -32,4 +32,4 @@ require (
 )
 
 // github.com/labstack/echo/v4 v4.3.1 => example.com/echo.git/v4 v4.3.1
-replace github.com/aquasecurity/go-dep-parser => github.com/deepfactor-io/go-dep-parser v0.0.0-20230228091112-63a15cdc6bc3
+replace github.com/aquasecurity/go-dep-parser => github.com/deepfactor-io/go-dep-parser v0.0.0-20230228145118-8c7764220754
