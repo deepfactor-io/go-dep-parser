@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/deepfactor-io/go-dep-parser/pkg/log"
+	"github.com/aquasecurity/go-dep-parser/pkg/log"
 	"golang.org/x/exp/slices"
 )
 

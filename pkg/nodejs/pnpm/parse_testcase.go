@@ -1,6 +1,6 @@
 package pnpm
 
-import "github.com/deepfactor-io/go-dep-parser/pkg/types"
+import "github.com/aquasecurity/go-dep-parser/pkg/types"
 
 var (
 	// docker run --name node --rm -it node:16-alpine sh

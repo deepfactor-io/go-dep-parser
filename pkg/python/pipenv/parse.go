@@ -1,12 +1,13 @@
 package pipenv
 
 import (
-	"github.com/liamg/jfather"
 	"io"
 	"strings"
 
-	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
-	"github.com/deepfactor-io/go-dep-parser/pkg/types"
+	"github.com/liamg/jfather"
+
+	dio "github.com/aquasecurity/go-dep-parser/pkg/io"
+	"github.com/aquasecurity/go-dep-parser/pkg/types"
 	"golang.org/x/xerrors"
 )
 

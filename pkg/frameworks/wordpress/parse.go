@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/deepfactor-io/go-dep-parser/pkg/types"
+	"github.com/aquasecurity/go-dep-parser/pkg/types"
 )
 
 func Parse(r io.Reader) (lib types.Library, err error) {

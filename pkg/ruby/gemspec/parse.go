@@ -8,8 +8,8 @@ import (
 
 	"golang.org/x/xerrors"
 
-	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
-	"github.com/deepfactor-io/go-dep-parser/pkg/types"
+	dio "github.com/aquasecurity/go-dep-parser/pkg/io"
+	"github.com/aquasecurity/go-dep-parser/pkg/types"
 )
 
 const specNewStr = "Gem::Specification.new"

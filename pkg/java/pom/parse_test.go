@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/deepfactor-io/go-dep-parser/pkg/java/pom"
-	"github.com/deepfactor-io/go-dep-parser/pkg/types"
+	"github.com/aquasecurity/go-dep-parser/pkg/java/pom"
+	"github.com/aquasecurity/go-dep-parser/pkg/types"
 )
 
 func TestPom_Parse(t *testing.T) {

@@ -11,14 +11,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
+	dio "github.com/aquasecurity/go-dep-parser/pkg/io"
 	multierror "github.com/hashicorp/go-multierror"
 	"golang.org/x/net/html/charset"
 	"golang.org/x/xerrors"
 
-	"github.com/deepfactor-io/go-dep-parser/pkg/log"
-	"github.com/deepfactor-io/go-dep-parser/pkg/types"
-	"github.com/deepfactor-io/go-dep-parser/pkg/utils"
+	"github.com/aquasecurity/go-dep-parser/pkg/log"
+	"github.com/aquasecurity/go-dep-parser/pkg/types"
+	"github.com/aquasecurity/go-dep-parser/pkg/utils"
 )
 
 const (

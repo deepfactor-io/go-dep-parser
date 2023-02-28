@@ -1,6 +1,6 @@
 package yarn
 
-import "github.com/deepfactor-io/go-dep-parser/pkg/types"
+import "github.com/aquasecurity/go-dep-parser/pkg/types"
 
 var (
 	// cd ./pkg/nodejs/yarn

@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"strings"
 
-	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
-	"github.com/deepfactor-io/go-dep-parser/pkg/types"
-	"github.com/deepfactor-io/go-dep-parser/pkg/utils"
+	dio "github.com/aquasecurity/go-dep-parser/pkg/io"
+	"github.com/aquasecurity/go-dep-parser/pkg/types"
+	"github.com/aquasecurity/go-dep-parser/pkg/utils"
 )
 
 type Parser struct{}

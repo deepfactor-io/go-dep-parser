@@ -9,7 +9,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/deepfactor-io/go-dep-parser/pkg/utils"
+	"github.com/aquasecurity/go-dep-parser/pkg/utils"
 	"github.com/hashicorp/go-retryablehttp"
 	"golang.org/x/xerrors"
 

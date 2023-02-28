@@ -2,7 +2,6 @@ package jar_test
 
 import (
 	"encoding/json"
-	"github.com/aquasecurity/go-dep-parser/pkg/java/jar/sonatype"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -10,11 +9,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/aquasecurity/go-dep-parser/pkg/java/jar/sonatype"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/deepfactor-io/go-dep-parser/pkg/java/jar"
-	"github.com/deepfactor-io/go-dep-parser/pkg/types"
+	"github.com/aquasecurity/go-dep-parser/pkg/java/jar"
+	"github.com/aquasecurity/go-dep-parser/pkg/types"
 )
 
 var (

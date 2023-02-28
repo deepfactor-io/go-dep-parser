@@ -1,16 +1,17 @@
 package core_deps
 
 import (
-	"github.com/liamg/jfather"
 	"io"
 	"strings"
 
+	"github.com/liamg/jfather"
+
 	"golang.org/x/xerrors"
 
-	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
-	"github.com/deepfactor-io/go-dep-parser/pkg/types"
+	dio "github.com/aquasecurity/go-dep-parser/pkg/io"
+	"github.com/aquasecurity/go-dep-parser/pkg/types"
 
-	"github.com/deepfactor-io/go-dep-parser/pkg/log"
+	"github.com/aquasecurity/go-dep-parser/pkg/log"
 )
 
 type Parser struct{}
