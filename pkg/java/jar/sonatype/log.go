@@ -1,4 +1,4 @@
-package jar
+package sonatype
 
 import "github.com/deepfactor-io/go-dep-parser/pkg/log"
 
