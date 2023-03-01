@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/BurntSushi/toml v1.2.1
-	github.com/aquasecurity/go-dep-parser v0.0.0-00010101000000-000000000000
+	// github.com/aquasecurity/go-dep-parser v0.0.0-00010101000000-000000000000
 	github.com/aquasecurity/go-pep440-version v0.0.0-20210121094942-22b2f8951d46
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-retryablehttp v0.7.2
@@ -30,6 +30,3 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/text v0.3.8 // indirect
 )
-
-// github.com/labstack/echo/v4 v4.3.1 => example.com/echo.git/v4 v4.3.1
-replace github.com/aquasecurity/go-dep-parser => github.com/deepfactor-io/go-dep-parser v0.0.0-20230228145118-8c7764220754

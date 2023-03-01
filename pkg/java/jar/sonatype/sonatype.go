@@ -9,11 +9,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/aquasecurity/go-dep-parser/pkg/utils"
+	"github.com/deepfactor-io/go-dep-parser/pkg/utils"
 	"github.com/hashicorp/go-retryablehttp"
 	"golang.org/x/xerrors"
 
-	"github.com/aquasecurity/go-dep-parser/pkg/java/jar"
+	"github.com/deepfactor-io/go-dep-parser/pkg/java/jar"
 )
 
 const (

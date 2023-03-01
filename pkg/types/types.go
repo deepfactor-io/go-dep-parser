@@ -1,6 +1,6 @@
 package types
 
-import dio "github.com/aquasecurity/go-dep-parser/pkg/io"
+import dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
 
 type Library struct {
 	ID                 string `json:",omitempty"`

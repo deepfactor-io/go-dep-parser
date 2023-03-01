@@ -1,6 +1,6 @@
 package sum
 
-import "github.com/aquasecurity/go-dep-parser/pkg/types"
+import "github.com/deepfactor-io/go-dep-parser/pkg/types"
 
 var (
 	// docker run --name gomod --rm -it golang:1.15 bash

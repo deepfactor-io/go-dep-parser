@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aquasecurity/go-dep-parser/pkg/types"
+	"github.com/deepfactor-io/go-dep-parser/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -2,11 +2,12 @@ package pub
 
 import (
 	"fmt"
+
 	"golang.org/x/xerrors"
 	"gopkg.in/yaml.v3"
 
-	dio "github.com/aquasecurity/go-dep-parser/pkg/io"
-	"github.com/aquasecurity/go-dep-parser/pkg/types"
+	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
+	"github.com/deepfactor-io/go-dep-parser/pkg/types"
 )
 
 const (

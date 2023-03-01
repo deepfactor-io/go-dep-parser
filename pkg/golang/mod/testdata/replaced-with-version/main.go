@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/aquasecurity/go-dep-parser/pkg/golang/mod"
+	"github.com/deepfactor-io/go-dep-parser/pkg/golang/mod"
 )
 
 func main() {
