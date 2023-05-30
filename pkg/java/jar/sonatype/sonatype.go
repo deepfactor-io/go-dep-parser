@@ -102,7 +102,7 @@ func (s Sonatype) Exists(groupID, artifactID string) (bool, error) {
 	defer resp.Body.Close()
 
 	if utils.IsRetryableError(resp.StatusCode) {
-		return jar.Properties{}, errors.New(utils.JAVA_ARTIFACT_PARSER_ERROR + "Status Code:" + fmt.Sprint(resp.StatusCode))
+		return false, errors.New(utils.JAVA_ARTIFACT_PARSER_ERROR + "Status Code:" + fmt.Sprint(resp.StatusCode))
 	}
 
 	var res apiResponse
@@ -182,9 +182,9 @@ func (s Sonatype) SearchByArtifactID(artifactID string) (string, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		if utils.IsRetryableError(resp.StatusCode) {
-			return jar.Properties{}, errors.New(utils.JAVA_ARTIFACT_PARSER_ERROR + "Status Code:" + fmt.Sprint(resp.StatusCode))
+			return "", errors.New(utils.JAVA_ARTIFACT_PARSER_ERROR + "Status Code:" + fmt.Sprint(resp.StatusCode))
 		}
-		return jar.Properties{}, xerrors.Errorf("status %s from %s", resp.Status, req.URL.String())
+		return "", xerrors.Errorf("status %s from %s", resp.Status, req.URL.String())
 	}
 
 	var res apiResponse

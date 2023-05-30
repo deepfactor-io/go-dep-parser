@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/deepfactor-io/go-dep-parser/pkg/log"
+
 	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
 	"github.com/deepfactor-io/go-dep-parser/pkg/types"
 	"github.com/deepfactor-io/go-dep-parser/pkg/utils"
@@ -116,7 +118,7 @@ func validProtocol(protocol string) bool {
 
 func ignoreProtocol(protocol string) bool {
 	switch protocol {
-	case "workspace", "patch", "file", "link", "portal", "github":
+	case "workspace", "patch", "file", "link", "portal", "github", "git", "git+ssh", "git+http", "git+https", "git+file":
 		return true
 	}
 	return false
@@ -205,7 +207,10 @@ func parseBlock(block []byte, lineNum int) (lib Library, deps []string, newLine 
 			if patterns == nil || !validProtocol(protocol) {
 				skipBlock = true
 				if !ignoreProtocol(protocol) {
-					return Library{}, nil, -1, xerrors.Errorf("failed to parse package pattern: '%s', unknown protocol: '%s'", line, protocol)
+					// we need to calculate the last line of the block in order to correctly determine the line numbers of the next blocks
+					// store the error. we will handle it later
+					err = xerrors.Errorf("unknown protocol: '%s', line: %s", protocol, line)
+					continue
 				}
 				continue
 			} else {
@@ -214,6 +219,13 @@ func parseBlock(block []byte, lineNum int) (lib Library, deps []string, newLine 
 				continue
 			}
 		}
+	}
+
+	// in case an unsupported protocol is detected
+	// show warning and continue parsing
+	if err != nil {
+		log.Logger.Warnf("Yarn protocol error: %s", err)
+		return Library{}, nil, scanner.LineNum(lineNum), nil
 	}
 
 	lib.Location = types.Location{
