@@ -61,8 +61,8 @@ func New(opts ...Option) Sonatype {
 	retryClient := retryablehttp.NewClient()
 	retryClient.Logger = logger{}
 	retryClient.RetryWaitMin = 20 * time.Second
-	retryClient.RetryWaitMax = 5 * time.Minute
-	retryClient.RetryMax = 5
+	retryClient.RetryWaitMax = 3 * time.Minute
+	retryClient.RetryMax = 3
 	client := retryClient.StandardClient()
 
 	// attempt to read the maven central api url from os environment, if it's
@@ -97,7 +97,7 @@ func (s Sonatype) Exists(groupID, artifactID string) (bool, error) {
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		return false, xerrors.Errorf("http error: %w", err)
+		return false, xerrors.Errorf("%s http error: %w", utils.JAVA_ARTIFACT_PARSER_ERROR, err)
 	}
 	defer resp.Body.Close()
 
@@ -127,7 +127,7 @@ func (s Sonatype) SearchBySHA1(sha1 string) (jar.Properties, error) {
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		return jar.Properties{}, xerrors.Errorf("sha1 search error: %w", err)
+		return jar.Properties{}, xerrors.Errorf("%s sha1 search error: %w", utils.JAVA_ARTIFACT_PARSER_ERROR, err)
 	}
 	defer resp.Body.Close()
 
@@ -176,7 +176,7 @@ func (s Sonatype) SearchByArtifactID(artifactID string) (string, error) {
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		return "", xerrors.Errorf("artifactID search error: %w", err)
+		return "", xerrors.Errorf("%s artifactID search error: %w", utils.JAVA_ARTIFACT_PARSER_ERROR, err)
 	}
 	defer resp.Body.Close()
 

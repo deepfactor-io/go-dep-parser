@@ -356,20 +356,11 @@ func parseManifest(f *zip.File) (manifest, error) {
 }
 
 func (m manifest) properties(filePath string) Properties {
-	groupID, err := m.determineGroupID()
-	if err != nil {
-		return Properties{}
-	}
+	groupID, _ := m.determineGroupID()
 
-	artifactID, err := m.determineArtifactID()
-	if err != nil {
-		return Properties{}
-	}
+	artifactID, _ := m.determineArtifactID()
 
-	version, err := m.determineVersion()
-	if err != nil {
-		return Properties{}
-	}
+	version, _ := m.determineVersion()
 
 	return Properties{
 		GroupID:    groupID,
