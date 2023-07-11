@@ -179,7 +179,9 @@ func (p *Parser) parseArtifact(filePath string, size int64, r dio.ReadSeekerAt) 
 	if err == nil {
 		log.Logger.Debugw("POM was determined in a heuristic way", zap.String("file", fileName),
 			zap.String("artifact", fileProps.String()))
-		libs = append(libs, fileProps.Library())
+		lib := fileProps.Library()
+		lib.Warnings = append(lib.Warnings, "Heuristic GroupID detection")
+		libs = append(libs, lib)
 		return libs, nil, nil
 	}
 

@@ -11,6 +11,7 @@ type Library struct {
 	ExternalReferences []ExternalRef `json:",omitempty"`
 	Locations          []Location    `json:",omitempty"`
 	FilePath           string        `json:",omitempty"` // Required to show nested jars
+	Warnings           []string      `json:",omitempty"`
 }
 
 type Libraries []Library
