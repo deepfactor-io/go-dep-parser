@@ -180,7 +180,7 @@ func (p *Parser) parseArtifact(filePath string, size int64, r dio.ReadSeekerAt) 
 		log.Logger.Debugw("POM was determined in a heuristic way", zap.String("file", fileName),
 			zap.String("artifact", fileProps.String()))
 		lib := fileProps.Library()
-		lib.Warnings = append(lib.Warnings, "Heuristic GroupID detection")
+		lib.Warnings = append(lib.Warnings, "GroupID was determined heuristically. Refer https://www.deepfactor.io/docs/deepfactor-scan-errors#scan-warnings")
 		libs = append(libs, lib)
 		return libs, nil, nil
 	}
