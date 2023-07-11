@@ -21,6 +21,7 @@ func (p Properties) Library() types.Library {
 		Name:     fmt.Sprintf("%s:%s", p.GroupID, p.ArtifactID),
 		Version:  p.Version,
 		FilePath: p.FilePath,
+		Warnings: []string{},
 	}
 }
 
