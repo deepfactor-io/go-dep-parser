@@ -10,7 +10,7 @@ import (
 
 	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
 	"github.com/deepfactor-io/go-dep-parser/pkg/log"
-	"github.com/deepfactor-io/go-version/pkg/semver"
+	"github.com/aquasecurity/go-version/pkg/semver"
 	"github.com/deepfactor-io/go-dep-parser/pkg/types"
 )
 
