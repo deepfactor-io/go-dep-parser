@@ -112,7 +112,7 @@ func (p *Parser) parseArtifact(filePath string, size int64, r dio.ReadSeekerAt) 
 			if err == nil {
 				libs = append(libs, gavProps.Library())
 			} else {
-				log.Logger.Error("pomProperties: failed to get info from javadb using GAV %s", err)
+				log.Logger.Errorf("pomProperties: failed to get info from javadb using GAV %s", err)
 			}
 
 			// Check if the pom.properties is for the original JAR/WAR/EAR
@@ -160,7 +160,7 @@ func (p *Parser) parseArtifact(filePath string, size int64, r dio.ReadSeekerAt) 
 			// If groupId, artifactId and version are valid, they will be returned.
 			return append(libs, gavProps.Library()), nil, nil
 		} else {
-			log.Logger.Error("manifestProps: failed to get info from javadb using GAV %s", err)
+			log.Logger.Errorf("manifestProps: failed to get info from javadb using GAV %s", err)
 		}
 	}
 
@@ -169,7 +169,7 @@ func (p *Parser) parseArtifact(filePath string, size int64, r dio.ReadSeekerAt) 
 	if err == nil {
 		return append(libs, props.Library()), nil, nil
 	} else {
-		log.Logger.Error("failed to get info from javadb using SHA1 %s", err)
+		log.Logger.Errorf("failed to get info from javadb using SHA1 %s", err)
 	}
 
 	log.Logger.Debugw("No such POM in the central repositories", zap.String("file", fileName))
