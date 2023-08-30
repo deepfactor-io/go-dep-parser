@@ -109,11 +109,13 @@ func (p *Parser) parseArtifact(filePath string, size int64, r dio.ReadSeekerAt) 
 
 			// get license info
 			gavProps, err := p.client.SearchByGAV(props.GroupID, props.ArtifactID, props.Version)
+			lib := props.Library()
 			if err == nil {
-				libs = append(libs, gavProps.Library())
+				lib.License = gavProps.License
 			} else {
 				log.Logger.Errorf("pomProperties: failed to get info from javadb using GAV %s", err)
 			}
+			libs = append(libs, lib)
 
 			// Check if the pom.properties is for the original JAR/WAR/EAR
 			if fileProps.ArtifactID == props.ArtifactID && fileProps.Version == props.Version {
