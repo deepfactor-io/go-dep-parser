@@ -14,6 +14,7 @@ type Properties struct {
 	ArtifactID string
 	Version    string
 	FilePath   string // path to file containing these props
+	License    string
 }
 
 func (p Properties) Library() types.Library {
@@ -22,6 +23,7 @@ func (p Properties) Library() types.Library {
 		Version:  p.Version,
 		FilePath: p.FilePath,
 		Warnings: []string{},
+		License:  p.License,
 	}
 }
 
