@@ -206,3 +206,7 @@ func (s Sonatype) SearchByArtifactID(artifactID string) (string, error) {
 
 	return d.GroupID, nil
 }
+
+func (s Sonatype) SearchByGAV(groupID, artifactID, version string) (jar.Properties, error) {
+	return jar.Properties{}, nil
+}

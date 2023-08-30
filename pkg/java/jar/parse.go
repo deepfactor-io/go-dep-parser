@@ -5,9 +5,7 @@ import (
 	"bufio"
 	"crypto/sha1"
 	"encoding/hex"
-	"errors"
 	"fmt"
-	"github.com/samber/lo"
 	"io"
 	"os"
 	"path"
@@ -15,13 +13,14 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/samber/lo"
+
 	"go.uber.org/zap"
 	"golang.org/x/xerrors"
 
 	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
 	"github.com/deepfactor-io/go-dep-parser/pkg/log"
 	"github.com/deepfactor-io/go-dep-parser/pkg/types"
-	"github.com/deepfactor-io/go-dep-parser/pkg/utils"
 )
 
 var (
@@ -30,6 +29,7 @@ var (
 
 type Client interface {
 	Exists(groupID, artifactID string) (bool, error)
+	SearchByGAV(groupID, artifactID, version string) (Properties, error)
 	SearchBySHA1(sha1 string) (Properties, error)
 	SearchByArtifactID(artifactID string) (string, error)
 }
@@ -85,8 +85,6 @@ func (p *Parser) Parse(r dio.ReadSeekerAt) ([]types.Library, []types.Dependency,
 func (p *Parser) parseArtifact(filePath string, size int64, r dio.ReadSeekerAt) ([]types.Library, []types.Dependency, error) {
 	log.Logger.Debugw("Parsing Java artifacts...", zap.String("file", filePath))
 
-	var finalError string
-
 	zr, err := zip.NewReader(r, size)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("zip error: %w", err)
@@ -108,7 +106,14 @@ func (p *Parser) parseArtifact(filePath string, size int64, r dio.ReadSeekerAt) 
 			if err != nil {
 				return nil, nil, xerrors.Errorf("failed to parse %s: %w", fileInJar.Name, err)
 			}
-			libs = append(libs, props.Library())
+
+			// get license info
+			gavProps, err := p.client.SearchByGAV(props.GroupID, props.ArtifactID, props.Version)
+			if err == nil {
+				libs = append(libs, gavProps.Library())
+			} else {
+				log.Logger.Error("pomProperties: failed to get info from javadb using GAV %s", err)
+			}
 
 			// Check if the pom.properties is for the original JAR/WAR/EAR
 			if fileProps.ArtifactID == props.ArtifactID && fileProps.Version == props.Version {
@@ -135,26 +140,27 @@ func (p *Parser) parseArtifact(filePath string, size int64, r dio.ReadSeekerAt) 
 	}
 
 	manifestProps := m.properties(filePath)
-	if p.offline {
-		// In offline mode, we will not check if the artifact information is correct.
-		if !manifestProps.Valid() {
-			log.Logger.Debugw("Unable to identify POM in offline mode", zap.String("file", fileName))
+
+	// Offline scan check is not required since we don't refer maven directly
+	/*
+		if p.offline {
+			// In offline mode, we will not check if the artifact information is correct.
+			if !manifestProps.Valid() {
+				log.Logger.Debugw("Unable to identify POM in offline mode", zap.String("file", fileName))
+			}
+			return append(libs, manifestProps.Library()), nil, nil
 		}
-		return append(libs, manifestProps.Library()), nil, nil
-	}
+	*/
 
 	if manifestProps.Valid() {
 		// Even if MANIFEST.MF is found, the groupId and artifactId might not be valid.
 		// We have to make sure that the artifact exists actually.
-		var ok bool
-		var err error
-		if ok, err = p.client.Exists(manifestProps.GroupID, manifestProps.ArtifactID); ok {
-			// If groupId and artifactId are valid, they will be returned.
-			return append(libs, manifestProps.Library()), nil, nil
-		}
-
-		if err != nil && strings.Contains(err.Error(), utils.JAVA_ARTIFACT_PARSER_ERROR) {
-			finalError += "manifest validation error: " + err.Error()
+		gavProps, err := p.client.SearchByGAV(manifestProps.GroupID, manifestProps.ArtifactID, manifestProps.Version)
+		if err == nil {
+			// If groupId, artifactId and version are valid, they will be returned.
+			return append(libs, gavProps.Library()), nil, nil
+		} else {
+			log.Logger.Error("manifestProps: failed to get info from javadb using GAV %s", err)
 		}
 	}
 
@@ -162,19 +168,15 @@ func (p *Parser) parseArtifact(filePath string, size int64, r dio.ReadSeekerAt) 
 	props, err := p.searchBySHA1(r, filePath)
 	if err == nil {
 		return append(libs, props.Library()), nil, nil
+	} else {
+		log.Logger.Error("failed to get info from javadb using SHA1 %s", err)
 	}
 
-	if strings.Contains(err.Error(), utils.JAVA_ARTIFACT_PARSER_ERROR) {
-		finalError += ";search by SHA1 error: " + err.Error()
-	}
 	log.Logger.Debugw("No such POM in the central repositories", zap.String("file", fileName))
 
 	// Return when artifactId or version from the file name are empty
 	if fileProps.ArtifactID == "" || fileProps.Version == "" {
-		if len(finalError) == 0 {
-			return append(libs, manifestProps.Library()), nil, nil
-		}
-		return append(libs, manifestProps.Library()), nil, errors.New(finalError)
+		return append(libs, manifestProps.Library()), nil, nil
 	}
 
 	// Try to search groupId by artifactId via sonatype API
@@ -187,11 +189,6 @@ func (p *Parser) parseArtifact(filePath string, size int64, r dio.ReadSeekerAt) 
 		lib.Warnings = append(lib.Warnings, "GroupID was determined heuristically. Refer https://www.deepfactor.io/docs/deepfactor-scan-errors#scan-warnings")
 		libs = append(libs, lib)
 		return libs, nil, nil
-	}
-
-	if strings.Contains(err.Error(), utils.JAVA_ARTIFACT_PARSER_ERROR) {
-		finalError += ";search by ArtifactID error: " + err.Error()
-		return append(libs, manifestProps.Library()), nil, errors.New(finalError)
 	}
 
 	return libs, nil, nil
