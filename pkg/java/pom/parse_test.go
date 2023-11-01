@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,6 +21,7 @@ func TestPom_Parse(t *testing.T) {
 		local     bool
 		offline   bool
 		want      []types.Library
+		wantDeps  []types.Dependency
 		wantErr   string
 	}{
 		{
@@ -30,13 +30,24 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:happy:1.0.0",
 					Name:    "com.example:happy",
 					Version: "1.0.0",
 					License: "BSD-3-Clause",
 				},
 				{
+					ID:      "org.example:example-api:1.7.30",
 					Name:    "org.example:example-api",
 					Version: "1.7.30",
+					License: "The Apache Software License, Version 2.0",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:happy:1.0.0",
+					DependsOn: []string{
+						"org.example:example-api:1.7.30",
+					},
 				},
 			},
 		},
@@ -46,13 +57,24 @@ func TestPom_Parse(t *testing.T) {
 			local:     false,
 			want: []types.Library{
 				{
+					ID:      "com.example:happy:1.0.0",
 					Name:    "com.example:happy",
 					Version: "1.0.0",
 					License: "BSD-3-Clause",
 				},
 				{
+					ID:      "org.example:example-api:1.7.30",
 					Name:    "org.example:example-api",
 					Version: "1.7.30",
+					License: "The Apache Software License, Version 2.0",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:happy:1.0.0",
+					DependsOn: []string{
+						"org.example:example-api:1.7.30",
+					},
 				},
 			},
 		},
@@ -63,6 +85,7 @@ func TestPom_Parse(t *testing.T) {
 			offline:   true,
 			want: []types.Library{
 				{
+					ID:      "org.example:example-offline:2.3.4",
 					Name:    "org.example:example-offline",
 					Version: "2.3.4",
 				},
@@ -74,13 +97,24 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:child:1.0.0",
 					Name:    "com.example:child",
 					Version: "1.0.0",
 					License: "Apache 2.0",
 				},
 				{
+					ID:      "org.example:example-api:1.7.30",
 					Name:    "org.example:example-api",
 					Version: "1.7.30",
+					License: "The Apache Software License, Version 2.0",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:child:1.0.0",
+					DependsOn: []string{
+						"org.example:example-api:1.7.30",
+					},
 				},
 			},
 		},
@@ -90,12 +124,23 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:child:2.0.0",
 					Name:    "com.example:child",
 					Version: "2.0.0",
 				},
 				{
+					ID:      "org.example:example-api:2.0.0",
 					Name:    "org.example:example-api",
 					Version: "2.0.0",
+					License: "The Apache Software License, Version 2.0",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:child:2.0.0",
+					DependsOn: []string{
+						"org.example:example-api:2.0.0",
+					},
 				},
 			},
 		},
@@ -105,12 +150,23 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:test:0.0.1-SNAPSHOT",
 					Name:    "com.example:test",
 					Version: "0.0.1-SNAPSHOT",
 				},
 				{
+					ID:      "org.example:example-api:2.0.0",
 					Name:    "org.example:example-api",
 					Version: "2.0.0",
+					License: "The Apache Software License, Version 2.0",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:test:0.0.1-SNAPSHOT",
+					DependsOn: []string{
+						"org.example:example-api:2.0.0",
+					},
 				},
 			},
 		},
@@ -120,16 +176,34 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:child:1.0.0",
 					Name:    "com.example:child",
 					Version: "1.0.0",
 				},
 				{
-					Name:    "org.example:example-api",
-					Version: "4.0.0",
+					ID:       "org.example:example-api:4.0.0",
+					Name:     "org.example:example-api",
+					Version:  "4.0.0",
+					Indirect: true,
 				},
 				{
+					ID:      "org.example:example-dependency:1.2.3",
 					Name:    "org.example:example-dependency",
 					Version: "1.2.3",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:child:1.0.0",
+					DependsOn: []string{
+						"org.example:example-dependency:1.2.3",
+					},
+				},
+				{
+					ID: "org.example:example-dependency:1.2.3",
+					DependsOn: []string{
+						"org.example:example-api:4.0.0",
+					},
 				},
 			},
 		},
@@ -139,13 +213,24 @@ func TestPom_Parse(t *testing.T) {
 			local:     false,
 			want: []types.Library{
 				{
+					ID:      "com.example:child:1.0.0-SNAPSHOT",
 					Name:    "com.example:child",
 					Version: "1.0.0-SNAPSHOT",
 					License: "Apache 2.0",
 				},
 				{
+					ID:      "org.example:example-api:1.7.30",
 					Name:    "org.example:example-api",
 					Version: "1.7.30",
+					License: "The Apache Software License, Version 2.0",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:child:1.0.0-SNAPSHOT",
+					DependsOn: []string{
+						"org.example:example-api:1.7.30",
+					},
 				},
 			},
 		},
@@ -155,13 +240,24 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:child:3.0.0",
 					Name:    "com.example:child",
 					Version: "3.0.0",
 					License: "Apache 2.0",
 				},
 				{
+					ID:      "org.example:example-api:1.7.30",
 					Name:    "org.example:example-api",
 					Version: "1.7.30",
+					License: "The Apache Software License, Version 2.0",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:child:3.0.0",
+					DependsOn: []string{
+						"org.example:example-api:1.7.30",
+					},
 				},
 			},
 		},
@@ -171,17 +267,37 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:base:4.0.0",
 					Name:    "com.example:base",
 					Version: "4.0.0",
 					License: "Apache 2.0",
 				},
 				{
-					Name:    "org.example:example-api",
-					Version: "1.7.30",
+					ID:       "org.example:example-api:1.7.30",
+					Name:     "org.example:example-api",
+					Version:  "1.7.30",
+					License:  "The Apache Software License, Version 2.0",
+					Indirect: true,
 				},
 				{
+					ID:      "org.example:example-child:2.0.0",
 					Name:    "org.example:example-child",
 					Version: "2.0.0",
+					License: "Apache 2.0",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:base:4.0.0",
+					DependsOn: []string{
+						"org.example:example-child:2.0.0",
+					},
+				},
+				{
+					ID: "org.example:example-child:2.0.0",
+					DependsOn: []string{
+						"org.example:example-api:1.7.30",
+					},
 				},
 			},
 		},
@@ -191,13 +307,24 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:child:1.0.0",
 					Name:    "com.example:child",
 					Version: "1.0.0",
 					License: "Apache 2.0",
 				},
 				{
+					ID:      "org.example:example-api:1.7.30",
 					Name:    "org.example:example-api",
 					Version: "1.7.30",
+					License: "The Apache Software License, Version 2.0",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:child:1.0.0",
+					DependsOn: []string{
+						"org.example:example-api:1.7.30",
+					},
 				},
 			},
 		},
@@ -207,12 +334,22 @@ func TestPom_Parse(t *testing.T) {
 			local:     false,
 			want: []types.Library{
 				{
+					ID:      "com.example:child:1.0.0-SNAPSHOT",
 					Name:    "com.example:child",
 					Version: "1.0.0-SNAPSHOT",
 				},
 				{
+					ID:      "org.example:example-api:1.1.1",
 					Name:    "org.example:example-api",
 					Version: "1.1.1",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:child:1.0.0-SNAPSHOT",
+					DependsOn: []string{
+						"org.example:example-api:1.1.1",
+					},
 				},
 			},
 		},
@@ -222,76 +359,181 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "org.example:child:1.0.0",
 					Name:    "org.example:child",
 					Version: "1.0.0",
 					License: "Apache 2.0",
 				},
 				{
+					ID:      "org.example:example-api:1.7.30",
 					Name:    "org.example:example-api",
 					Version: "1.7.30",
+					License: "The Apache Software License, Version 2.0",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "org.example:child:1.0.0",
+					DependsOn: []string{
+						"org.example:example-api:1.7.30",
+					},
 				},
 			},
 		},
 		{
+			// mvn dependency:tree
+			// [INFO] com.example:soft:jar:1.0.0
+			// [INFO] +- org.example:example-api:jar:1.7.30:compile
+			// [INFO] \- org.example:example-dependency:jar:1.2.3:compile
+			// Save DependsOn for each library - https://github.com/aquasecurity/go-dep-parser/pull/243#discussion_r1303904548
 			name:      "soft requirement",
 			inputFile: filepath.Join("testdata", "soft-requirement", "pom.xml"),
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:soft:1.0.0",
 					Name:    "com.example:soft",
 					Version: "1.0.0",
 					License: "Apache 2.0",
 				},
 				{
+					ID:      "org.example:example-api:1.7.30",
 					Name:    "org.example:example-api",
 					Version: "1.7.30",
+					License: "The Apache Software License, Version 2.0",
 				},
 				{
+					ID:      "org.example:example-dependency:1.2.3",
 					Name:    "org.example:example-dependency",
 					Version: "1.2.3",
 				},
 			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:soft:1.0.0",
+					DependsOn: []string{
+						"org.example:example-api:1.7.30",
+						"org.example:example-dependency:1.2.3",
+					},
+				},
+				{
+					ID: "org.example:example-dependency:1.2.3",
+					DependsOn: []string{
+						"org.example:example-api:1.7.30",
+					},
+				},
+			},
 		},
 		{
+			// mvn dependency:tree
+			// [INFO] com.example:soft-transitive:jar:1.0.0
+			// [INFO] +- org.example:example-dependency:jar:1.2.3:compile
+			// [INFO] |  \- org.example:example-api:jar:2.0.0:compile
+			// [INFO] \- org.example:example-dependency2:jar:2.3.4:compile
+			// Save DependsOn for each library - https://github.com/aquasecurity/go-dep-parser/pull/243#discussion_r1303904548
 			name:      "soft requirement with transitive dependencies",
 			inputFile: filepath.Join("testdata", "soft-requirement-with-transitive-dependencies", "pom.xml"),
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:soft-transitive:1.0.0",
 					Name:    "com.example:soft-transitive",
 					Version: "1.0.0",
 				},
 				{
-					Name:    "org.example:example-api",
-					Version: "2.0.0",
+					ID:       "org.example:example-api:2.0.0",
+					Name:     "org.example:example-api",
+					Version:  "2.0.0",
+					License:  "The Apache Software License, Version 2.0",
+					Indirect: true,
 				},
 				{
+					ID:      "org.example:example-dependency2:2.3.4",
+					Name:    "org.example:example-dependency2",
+					Version: "2.3.4",
+				},
+				{
+					ID:      "org.example:example-dependency:1.2.3",
 					Name:    "org.example:example-dependency",
 					Version: "1.2.3",
 				},
+			},
+			wantDeps: []types.Dependency{
 				{
-					Name:    "org.example:example-dependency2",
-					Version: "2.3.4",
+					ID: "com.example:soft-transitive:1.0.0",
+					DependsOn: []string{
+						"org.example:example-dependency2:2.3.4",
+						"org.example:example-dependency:1.2.3",
+					},
+				},
+				{
+					ID: "org.example:example-dependency2:2.3.4",
+					DependsOn: []string{
+						"org.example:example-api:2.0.0",
+					},
+				},
+				{
+					ID: "org.example:example-dependency:1.2.3",
+					DependsOn: []string{
+						"org.example:example-api:2.0.0",
+					},
 				},
 			},
 		},
 		{
+			// mvn dependency:tree
+			//[INFO] com.example:hard:jar:1.0.0
+			//[INFO] +- org.example:example-nested:jar:3.3.4:compile
+			//[INFO] \- org.example:example-dependency:jar:1.2.3:compile
+			//[INFO]    \- org.example:example-api:jar:2.0.0:compile
+			// Save DependsOn for each library - https://github.com/aquasecurity/go-dep-parser/pull/243#discussion_r1303904548
 			name:      "hard requirement for the specified version",
 			inputFile: filepath.Join("testdata", "hard-requirement", "pom.xml"),
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:hard:1.0.0",
 					Name:    "com.example:hard",
 					Version: "1.0.0",
 					License: "Apache 2.0",
 				},
 				{
-					Name:    "org.example:example-api",
-					Version: "2.0.0",
+					ID:       "org.example:example-api:2.0.0",
+					Name:     "org.example:example-api",
+					Version:  "2.0.0",
+					License:  "The Apache Software License, Version 2.0",
+					Indirect: true,
 				},
 				{
+					ID:      "org.example:example-dependency:1.2.3",
 					Name:    "org.example:example-dependency",
-					Version: "1.2.4",
+					Version: "1.2.3",
+				},
+				{
+					ID:      "org.example:example-nested:3.3.4",
+					Name:    "org.example:example-nested",
+					Version: "3.3.4",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:hard:1.0.0",
+					DependsOn: []string{
+						"org.example:example-dependency:1.2.3",
+						"org.example:example-nested:3.3.4",
+					},
+				},
+				{
+					ID: "org.example:example-dependency:1.2.3",
+					DependsOn: []string{
+						"org.example:example-api:2.0.0",
+					},
+				},
+				{
+					ID: "org.example:example-nested:3.3.4",
+					DependsOn: []string{
+						"org.example:example-dependency:1.2.3",
+					},
 				},
 			},
 		},
@@ -301,6 +543,7 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:hard:1.0.0",
 					Name:    "com.example:hard",
 					Version: "1.0.0",
 					License: "Apache 2.0",
@@ -313,13 +556,24 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:import:2.0.0",
 					Name:    "com.example:import",
 					Version: "2.0.0",
 					License: "Apache 2.0",
 				},
 				{
+					ID:      "org.example:example-api:1.7.30",
 					Name:    "org.example:example-api",
 					Version: "1.7.30",
+					License: "The Apache Software License, Version 2.0",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:import:2.0.0",
+					DependsOn: []string{
+						"org.example:example-api:1.7.30",
+					},
 				},
 			},
 		},
@@ -329,13 +583,24 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:import:2.0.0",
 					Name:    "com.example:import",
 					Version: "2.0.0",
 					License: "Apache 2.0",
 				},
 				{
+					ID:      "org.example:example-api:1.7.30",
 					Name:    "org.example:example-api",
 					Version: "1.7.30",
+					License: "The Apache Software License, Version 2.0",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:import:2.0.0",
+					DependsOn: []string{
+						"org.example:example-api:1.7.30",
+					},
 				},
 			},
 		},
@@ -345,16 +610,34 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:exclusions:3.0.0",
 					Name:    "com.example:exclusions",
 					Version: "3.0.0",
 				},
 				{
-					Name:    "org.example:example-dependency",
-					Version: "1.2.3",
+					ID:       "org.example:example-dependency:1.2.3",
+					Name:     "org.example:example-dependency",
+					Version:  "1.2.3",
+					Indirect: true,
 				},
 				{
+					ID:      "org.example:example-nested:3.3.3",
 					Name:    "org.example:example-nested",
 					Version: "3.3.3",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:exclusions:3.0.0",
+					DependsOn: []string{
+						"org.example:example-nested:3.3.3",
+					},
+				},
+				{
+					ID: "org.example:example-nested:3.3.3",
+					DependsOn: []string{
+						"org.example:example-dependency:1.2.3",
+					},
 				},
 			},
 		},
@@ -364,20 +647,34 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:wildcard-exclusions:4.0.0",
 					Name:    "com.example:wildcard-exclusions",
 					Version: "4.0.0",
 				},
 				{
-					Name:    "org.example:example-dependency",
-					Version: "1.2.3",
-				},
-				{
+					ID:      "org.example:example-dependency2:2.3.4",
 					Name:    "org.example:example-dependency2",
 					Version: "2.3.4",
 				},
 				{
+					ID:      "org.example:example-dependency:1.2.3",
+					Name:    "org.example:example-dependency",
+					Version: "1.2.3",
+				},
+				{
+					ID:      "org.example:example-nested:3.3.3",
 					Name:    "org.example:example-nested",
 					Version: "3.3.3",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:wildcard-exclusions:4.0.0",
+					DependsOn: []string{
+						"org.example:example-dependency2:2.3.4",
+						"org.example:example-dependency:1.2.3",
+						"org.example:example-nested:3.3.3",
+					},
 				},
 			},
 		},
@@ -387,18 +684,59 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:aggregation:1.0.0",
 					Name:    "com.example:aggregation",
 					Version: "1.0.0",
 					License: "Apache 2.0",
 				},
 				{
+					ID:      "com.example:module:1.1.1",
 					Name:    "com.example:module",
 					Version: "1.1.1",
 					License: "Apache 2.0",
 				},
 				{
-					Name:    "org.example:example-api",
-					Version: "1.7.30",
+					ID:       "org.example:example-api:2.0.0",
+					Name:     "org.example:example-api",
+					Version:  "2.0.0",
+					License:  "The Apache Software License, Version 2.0",
+					Indirect: true,
+				},
+				{
+					ID:      "org.example:example-dependency:1.2.3",
+					Name:    "org.example:example-dependency",
+					Version: "1.2.3",
+				},
+			},
+			// maven doesn't include modules in dep tree of root pom
+			// for modules uses separate graph:
+			// ➜ mvn dependency:tree
+			// [INFO] --------------------------------[ jar ]---------------------------------
+			// [INFO]
+			// [INFO] --- dependency:3.6.0:tree (default-cli) @ module ---
+			// [INFO] com.example:module:jar:1.1.1
+			// [INFO] \- org.example:example-dependency:jar:1.2.3:compile
+			// [INFO]    \- org.example:example-api:jar:2.0.0:compile
+			// [INFO]
+			// [INFO] ----------------------< com.example:aggregation >-----------------------
+			// [INFO] Building aggregation 1.0.0                                         [2/2]
+			// [INFO]   from pom.xml
+			// [INFO] --------------------------------[ pom ]---------------------------------
+			// [INFO]
+			// [INFO] --- dependency:3.6.0:tree (default-cli) @ aggregation ---
+			// [INFO] com.example:aggregation:pom:1.0.0
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:module:1.1.1",
+					DependsOn: []string{
+						"org.example:example-dependency:1.2.3",
+					},
+				},
+				{
+					ID: "org.example:example-dependency:1.2.3",
+					DependsOn: []string{
+						"org.example:example-api:2.0.0",
+					},
 				},
 			},
 		},
@@ -408,24 +746,45 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:aggregation:1.0.0",
 					Name:    "com.example:aggregation",
 					Version: "1.0.0",
 				},
 				{
+					ID:      "com.example:module1:1.1.1",
 					Name:    "com.example:module1",
 					Version: "1.1.1",
 				},
 				{
+					ID:      "com.example:module2:1.1.1",
 					Name:    "com.example:module2",
 					Version: "1.1.1",
 				},
 				{
+					ID:      "org.example:example-api:1.7.30",
 					Name:    "org.example:example-api",
 					Version: "1.7.30",
+					License: "The Apache Software License, Version 2.0",
 				},
 				{
+					ID:      "org.example:example-api:2.0.0",
 					Name:    "org.example:example-api",
 					Version: "2.0.0",
+					License: "The Apache Software License, Version 2.0",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:module1:1.1.1",
+					DependsOn: []string{
+						"org.example:example-api:1.7.30",
+					},
+				},
+				{
+					ID: "com.example:module2:1.1.1",
+					DependsOn: []string{
+						"org.example:example-api:2.0.0",
+					},
 				},
 			},
 		},
@@ -435,22 +794,49 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:root-pom-dep-management:1.0.0",
 					Name:    "com.example:root-pom-dep-management",
 					Version: "1.0.0",
 				},
 				{
-					Name:    "org.example:example-api",
-					Version: "2.0.0",
+					ID:       "org.example:example-api:2.0.0",
+					Name:     "org.example:example-api",
+					Version:  "2.0.0",
+					License:  "The Apache Software License, Version 2.0",
+					Indirect: true,
 				},
 				// dependency version is taken from `com.example:root-pom-dep-management` from dependencyManagement
 				// not from `com.example:example-nested` from `com.example:example-nested`
 				{
-					Name:    "org.example:example-dependency",
-					Version: "1.2.4",
+					ID:       "org.example:example-dependency:1.2.4",
+					Name:     "org.example:example-dependency",
+					Version:  "1.2.4",
+					Indirect: true,
 				},
 				{
+					ID:      "org.example:example-nested:3.3.3",
 					Name:    "org.example:example-nested",
 					Version: "3.3.3",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:root-pom-dep-management:1.0.0",
+					DependsOn: []string{
+						"org.example:example-nested:3.3.3",
+					},
+				},
+				{
+					ID: "org.example:example-dependency:1.2.4",
+					DependsOn: []string{
+						"org.example:example-api:2.0.0",
+					},
+				},
+				{
+					ID: "org.example:example-nested:3.3.3",
+					DependsOn: []string{
+						"org.example:example-dependency:1.2.4",
+					},
 				},
 			},
 		},
@@ -462,20 +848,47 @@ func TestPom_Parse(t *testing.T) {
 				// Managed dependencies (org.example:example-api:1.7.30) in org.example:example-dependency-management3
 				// should not affect dependencies of example-dependency (org.example:example-api:2.0.0)
 				{
-					Name:    "org.example:example-api",
-					Version: "2.0.0",
+					ID:       "org.example:example-api:2.0.0",
+					Name:     "org.example:example-api",
+					Version:  "2.0.0",
+					License:  "The Apache Software License, Version 2.0",
+					Indirect: true,
 				},
 				{
-					Name:    "org.example:example-dependency",
-					Version: "1.2.3",
-				},
-				{
+					ID:      "org.example:example-dependency-management3:1.1.1",
 					Name:    "org.example:example-dependency-management3",
 					Version: "1.1.1",
 				},
 				{
+					ID:       "org.example:example-dependency:1.2.3",
+					Name:     "org.example:example-dependency",
+					Version:  "1.2.3",
+					Indirect: true,
+				},
+				{
+					ID:      "org.example:transitive-dependency-management:2.0.0",
 					Name:    "org.example:transitive-dependency-management",
 					Version: "2.0.0",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "org.example:example-dependency-management3:1.1.1",
+					DependsOn: []string{
+						"org.example:example-dependency:1.2.3",
+					},
+				},
+				{
+					ID: "org.example:example-dependency:1.2.3",
+					DependsOn: []string{
+						"org.example:example-api:2.0.0",
+					},
+				},
+				{
+					ID: "org.example:transitive-dependency-management:2.0.0",
+					DependsOn: []string{
+						"org.example:example-dependency-management3:1.1.1",
+					},
 				},
 			},
 		},
@@ -485,13 +898,24 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:no-parent:1.0-SNAPSHOT",
 					Name:    "com.example:no-parent",
 					Version: "1.0-SNAPSHOT",
 					License: "Apache 2.0",
 				},
 				{
+					ID:      "org.example:example-api:1.7.30",
 					Name:    "org.example:example-api",
 					Version: "1.7.30",
+					License: "The Apache Software License, Version 2.0",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:no-parent:1.0-SNAPSHOT",
+					DependsOn: []string{
+						"org.example:example-api:1.7.30",
+					},
 				},
 			},
 		},
@@ -501,13 +925,23 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:not-found-dependency:1.0.0",
 					Name:    "com.example:not-found-dependency",
 					Version: "1.0.0",
 					License: "Apache 2.0",
 				},
 				{
+					ID:      "org.example:example-not-found:999",
 					Name:    "org.example:example-not-found",
 					Version: "999",
+				},
+			},
+			wantDeps: []types.Dependency{
+				{
+					ID: "com.example:not-found-dependency:1.0.0",
+					DependsOn: []string{
+						"org.example:example-not-found:999",
+					},
 				},
 			},
 		},
@@ -517,6 +951,7 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:aggregation:1.0.0",
 					Name:    "com.example:aggregation",
 					Version: "1.0.0",
 					License: "Apache 2.0",
@@ -529,6 +964,7 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example:multiply-licenses:1.0.0",
 					Name:    "com.example:multiply-licenses",
 					Version: "1.0.0",
 					License: "MIT, Apache 2.0",
@@ -541,9 +977,23 @@ func TestPom_Parse(t *testing.T) {
 			local:     true,
 			want: []types.Library{
 				{
+					ID:      "com.example.app:submodule:1.0.0",
 					Name:    "com.example.app:submodule",
 					Version: "1.0.0",
 					License: "Apache-2.0",
+				},
+			},
+		},
+		{
+			name:      "compare ArtifactIDs for base and parent pom's",
+			inputFile: filepath.Join("testdata", "no-parent-infinity-loop", "pom.xml"),
+			local:     true,
+			want: []types.Library{
+				{
+					ID:      "com.example:child:1.0.0",
+					Name:    "com.example:child",
+					Version: "1.0.0",
+					License: "The Apache Software License, Version 2.0",
 				},
 			},
 		},
@@ -567,7 +1017,7 @@ func TestPom_Parse(t *testing.T) {
 
 			p := pom.NewParser(tt.inputFile, pom.WithRemoteRepos(remoteRepos), pom.WithOffline(tt.offline))
 
-			got, _, err := p.Parse(f)
+			gotLibs, gotDeps, err := p.Parse(f)
 			if tt.wantErr != "" {
 				require.NotNil(t, err)
 				assert.Contains(t, err.Error(), tt.wantErr)
@@ -575,11 +1025,8 @@ func TestPom_Parse(t *testing.T) {
 			}
 			require.NoError(t, err)
 
-			sort.Slice(got, func(i, j int) bool {
-				return got[i].Name < got[j].Name
-			})
-
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.want, gotLibs)
+			assert.Equal(t, tt.wantDeps, gotDeps)
 		})
 	}
 }

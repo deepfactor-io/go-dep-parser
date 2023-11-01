@@ -7,6 +7,13 @@ import (
 
 	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
 	"github.com/deepfactor-io/go-dep-parser/pkg/types"
+
+	"strings"
+	"unicode"
+
+	"golang.org/x/text/encoding"
+	u "golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/transform"
 	"golang.org/x/xerrors"
 )
 
@@ -25,8 +32,13 @@ func NewParser() types.Parser {
 }
 
 func (p *Parser) Parse(r dio.ReadSeekerAt) ([]types.Library, []types.Dependency, error) {
+	// `requirements.txt` can use byte order marks (BOM)
+	// e.g. on Windows `requirements.txt` can use UTF-16LE with BOM
+	// We need to override them to avoid the file being read incorrectly
+	var transformer = u.BOMOverride(encoding.Nop.NewDecoder())
+	decodedReader := transform.NewReader(r, transformer)
 
-	scanner := bufio.NewScanner(r)
+	scanner := bufio.NewScanner(decodedReader)
 	var libs []types.Library
 	for scanner.Scan() {
 		line := scanner.Text()
