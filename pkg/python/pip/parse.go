@@ -8,9 +8,6 @@ import (
 	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
 	"github.com/deepfactor-io/go-dep-parser/pkg/types"
 
-	"strings"
-	"unicode"
-
 	"golang.org/x/text/encoding"
 	u "golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
