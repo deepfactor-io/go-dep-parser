@@ -1,10 +1,11 @@
 package swift
 
 import (
-	"github.com/aquasecurity/go-dep-parser/pkg/types"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/deepfactor-io/go-dep-parser/pkg/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParser_Parse(t *testing.T) {

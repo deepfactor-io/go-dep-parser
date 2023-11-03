@@ -89,7 +89,7 @@ var (
 		{Name: "github.com/anmitsu/go-shlex", Version: "0.0.0-20161002113705-648efa622239"},
 		{Name: "github.com/aquasecurity/bolt-fixtures", Version: "0.0.0-20200903104109-d34e7f983986"},
 		{Name: "github.com/aquasecurity/fanal", Version: "0.0.0-20210119051230-28c249da7cfd"},
-		{Name: "github.com/aquasecurity/go-dep-parser", Version: "0.0.0-20201028043324-889d4a92b8e0"},
+		{Name: "github.com/deepfactor-io/go-dep-parser", Version: "0.0.0-20201028043324-889d4a92b8e0"},
 		{Name: "github.com/aquasecurity/go-gem-version", Version: "0.0.0-20201115065557-8eed6fe000ce"},
 		{Name: "github.com/aquasecurity/go-npm-version", Version: "0.0.0-20201110091526-0b796d180798"},
 		{Name: "github.com/aquasecurity/go-pep440-version", Version: "0.0.0-20210121094942-22b2f8951d46"},

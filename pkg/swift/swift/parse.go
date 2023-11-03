@@ -1,14 +1,15 @@
 package swift
 
 import (
-	dio "github.com/aquasecurity/go-dep-parser/pkg/io"
-	"github.com/aquasecurity/go-dep-parser/pkg/types"
-	"github.com/aquasecurity/go-dep-parser/pkg/utils"
-	"github.com/liamg/jfather"
-	"golang.org/x/xerrors"
 	"io"
 	"sort"
 	"strings"
+
+	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
+	"github.com/deepfactor-io/go-dep-parser/pkg/types"
+	"github.com/deepfactor-io/go-dep-parser/pkg/utils"
+	"github.com/liamg/jfather"
+	"golang.org/x/xerrors"
 )
 
 // Parser is a parser for Package.resolved files
