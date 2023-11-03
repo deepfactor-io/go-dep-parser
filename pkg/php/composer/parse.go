@@ -16,7 +16,8 @@ import (
 )
 
 type lockFile struct {
-	Packages []packageInfo `json:"packages"`
+	Packages    []packageInfo `json:"packages"`
+	DevPackages []packageInfo `json:"packages-dev"`
 }
 type packageInfo struct {
 	Name      string            `json:"name"`
@@ -45,35 +46,8 @@ func (p *Parser) Parse(r dio.ReadSeekerAt) ([]types.Library, []types.Dependency,
 
 	libs := map[string]types.Library{}
 	foundDeps := map[string][]string{}
-	for _, pkg := range lockFile.Packages {
-		lib := types.Library{
-			ID:       utils.PackageID(pkg.Name, pkg.Version),
-			Name:     pkg.Name,
-			Version:  pkg.Version,
-			Indirect: false, // composer.lock file doesn't have info about Direct/Indirect deps. Will think that all dependencies are Direct
-			License:  strings.Join(pkg.License, ", "),
-			Locations: []types.Location{
-				{
-					StartLine: pkg.StartLine,
-					EndLine:   pkg.EndLine,
-				},
-			},
-		}
-		libs[lib.Name] = lib
-
-		var dependsOn []string
-		for depName := range pkg.Require {
-			// Require field includes required php version, skip this
-			// Also skip PHP extensions
-			if depName == "php" || strings.HasPrefix(depName, "ext") {
-				continue
-			}
-			dependsOn = append(dependsOn, depName) // field uses range of versions, so later we will fill in the versions from the libraries
-		}
-		if len(dependsOn) > 0 {
-			foundDeps[lib.ID] = dependsOn
-		}
-	}
+	populateDeps(lockFile.Packages, libs, foundDeps, false)
+	populateDeps(lockFile.DevPackages, libs, foundDeps, true)
 
 	// fill deps versions
 	var deps []types.Dependency
@@ -109,4 +83,37 @@ func (t *packageInfo) UnmarshalJSONWithMetadata(node jfather.Node) error {
 	t.StartLine = node.Range().Start.Line
 	t.EndLine = node.Range().End.Line
 	return nil
+}
+
+func populateDeps(packages []packageInfo, libs map[string]types.Library, foundDeps map[string][]string, isDev bool) {
+	for _, pkg := range packages {
+		lib := types.Library{
+			ID:       utils.PackageID(pkg.Name, pkg.Version),
+			Name:     pkg.Name,
+			Version:  pkg.Version,
+			Indirect: false, // composer.lock file doesn't have info about Direct/Indirect deps. Will think that all dependencies are Direct
+			License:  strings.Join(pkg.License, ", "),
+			Locations: []types.Location{
+				{
+					StartLine: pkg.StartLine,
+					EndLine:   pkg.EndLine,
+				},
+			},
+			Dev: isDev,
+		}
+		libs[lib.Name] = lib
+
+		var dependsOn []string
+		for depName := range pkg.Require {
+			// Require field includes required php version, skip this
+			// Also skip PHP extensions
+			if depName == "php" || strings.HasPrefix(depName, "ext") {
+				continue
+			}
+			dependsOn = append(dependsOn, depName) // field uses range of versions, so later we will fill in the versions from the libraries
+		}
+		if len(dependsOn) > 0 {
+			foundDeps[lib.ID] = dependsOn
+		}
+	}
 }

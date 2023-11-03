@@ -99,8 +99,7 @@ func (p *Parser) parseV2(packages map[string]Package) ([]types.Library, []types.
 	}
 
 	for pkgPath, pkg := range packages {
-		// TODO: include dev dependencies
-		if pkg.Dev || !strings.HasPrefix(pkgPath, "node_modules") {
+		if !strings.HasPrefix(pkgPath, "node_modules") {
 			continue
 		}
 
@@ -258,10 +257,6 @@ func (p *Parser) parseV1(dependencies map[string]Dependency, versions map[string
 	var libs []types.Library
 	var deps []types.Dependency
 	for pkgName, dependency := range dependencies {
-		// TODO: include dev dependencies
-		if dependency.Dev {
-			continue
-		}
 
 		lib := types.Library{
 			ID:       utils.PackageID(pkgName, dependency.Version),
