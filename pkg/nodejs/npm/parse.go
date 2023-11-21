@@ -118,6 +118,10 @@ func (p *Parser) parseV2(packages map[string]Package) ([]types.Library, []types.
 		// There are cases when similar libraries use same dependencies
 		// we need to add location for each these dependencies
 		if savedLib, ok := libs[pkgID]; ok {
+			// only when there is no `Dev: false` instance for package
+			// we consider it as Dev: true
+			savedLib.Dev = savedLib.Dev && pkg.Dev
+
 			savedLib.Locations = append(savedLib.Locations, location)
 			sort.Sort(savedLib.Locations)
 			libs[pkgID] = savedLib
