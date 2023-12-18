@@ -88,11 +88,10 @@ func (t *packageInfo) UnmarshalJSONWithMetadata(node jfather.Node) error {
 func populateDeps(packages []packageInfo, libs map[string]types.Library, foundDeps map[string][]string, isDev bool) {
 	for _, pkg := range packages {
 		lib := types.Library{
-			ID:       utils.PackageID(pkg.Name, pkg.Version),
-			Name:     pkg.Name,
-			Version:  pkg.Version,
-			Indirect: false, // composer.lock file doesn't have info about Direct/Indirect deps. Will think that all dependencies are Direct
-			License:  strings.Join(pkg.License, ", "),
+			ID:      utils.PackageID(pkg.Name, pkg.Version),
+			Name:    pkg.Name,
+			Version: pkg.Version,
+			License: strings.Join(pkg.License, ", "),
 			Locations: []types.Location{
 				{
 					StartLine: pkg.StartLine,
@@ -100,6 +99,10 @@ func populateDeps(packages []packageInfo, libs map[string]types.Library, foundDe
 				},
 			},
 			Dev: isDev,
+		}
+
+		if val, ok := libs[lib.Name]; ok {
+			lib.Indirect = val.Indirect
 		}
 		libs[lib.Name] = lib
 
@@ -110,7 +113,16 @@ func populateDeps(packages []packageInfo, libs map[string]types.Library, foundDe
 			if depName == "php" || strings.HasPrefix(depName, "ext") {
 				continue
 			}
+
 			dependsOn = append(dependsOn, depName) // field uses range of versions, so later we will fill in the versions from the libraries
+			if val, ok := libs[depName]; ok {
+				val.Indirect = true
+				libs[depName] = val
+			} else {
+				libs[depName] = types.Library{
+					Indirect: true,
+				}
+			}
 		}
 		if len(dependsOn) > 0 {
 			foundDeps[lib.ID] = dependsOn
