@@ -48,6 +48,9 @@ func (p *Parser) Parse(r dio.ReadSeekerAt) ([]types.Library, []types.Dependency,
 			Indirect: false,
 			Dev:      false,
 		}
+		// the key includes dev flag, to handle dev-prod conflict for the same package
+		// version does not matter because php allows only 1 version to be installed
+		// More over the version in composer.json is not necessarily an exact version
 		libs[lib.Name+fmt.Sprint(lib.Dev)] = lib
 	}
 
