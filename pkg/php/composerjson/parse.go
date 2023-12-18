@@ -24,6 +24,10 @@ func NewParser() types.Parser {
 	return &Parser{}
 }
 
+/*
+Parse : parses the composer.json file and extracts the packages explicitly requested for installation
+Same is used to identify direct dependencies in case of image scans
+*/
 func (p *Parser) Parse(r dio.ReadSeekerAt) ([]types.Library, []types.Dependency, error) {
 	var cJSON composerJSON
 	input, err := io.ReadAll(r)
