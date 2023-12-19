@@ -16,8 +16,9 @@ import (
 )
 
 type lockFile struct {
-	Packages    []packageInfo `json:"packages"`
-	DevPackages []packageInfo `json:"packages-dev"`
+	Packages        []packageInfo `json:"packages"`
+	DevPackages     []packageInfo `json:"packages-dev"`
+	DevPackageNames []string      `json:"dev-package-names"` // this is to handle dev packages in case of installed.json
 }
 type packageInfo struct {
 	Name      string            `json:"name"`
@@ -28,7 +29,9 @@ type packageInfo struct {
 	EndLine   int
 }
 
-type Parser struct{}
+type Parser struct {
+	devPackageNames map[string]struct{}
+}
 
 func NewParser() types.Parser {
 	return &Parser{}
@@ -46,8 +49,14 @@ func (p *Parser) Parse(r dio.ReadSeekerAt) ([]types.Library, []types.Dependency,
 
 	libs := map[string]types.Library{}
 	foundDeps := map[string][]string{}
-	populateDeps(lockFile.Packages, libs, foundDeps, false)
-	populateDeps(lockFile.DevPackages, libs, foundDeps, true)
+	p.devPackageNames = make(map[string]struct{})
+
+	for _, pkg := range lockFile.DevPackageNames {
+		p.devPackageNames[pkg] = struct{}{}
+	}
+
+	p.populateDeps(lockFile.Packages, libs, foundDeps, false)
+	p.populateDeps(lockFile.DevPackages, libs, foundDeps, true)
 
 	// fill deps versions
 	var deps []types.Dependency
@@ -85,8 +94,10 @@ func (t *packageInfo) UnmarshalJSONWithMetadata(node jfather.Node) error {
 	return nil
 }
 
-func populateDeps(packages []packageInfo, libs map[string]types.Library, foundDeps map[string][]string, isDev bool) {
+func (p *Parser) populateDeps(packages []packageInfo, libs map[string]types.Library, foundDeps map[string][]string, isDev bool) {
 	for _, pkg := range packages {
+		_, ok := p.devPackageNames[pkg.Name]
+		isDev = isDev || ok
 		lib := types.Library{
 			ID:      utils.PackageID(pkg.Name, pkg.Version),
 			Name:    pkg.Name,
