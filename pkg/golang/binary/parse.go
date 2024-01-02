@@ -40,12 +40,19 @@ func NewParser() types.Parser {
 // Parse scans file to try to report the Go and module versions.
 func (p *Parser) Parse(r dio.ReadSeekerAt) ([]types.Library, []types.Dependency, error) {
 	var warnings []string
-	var checkBuildID bool
 	var buildID string
 
 	info, err := buildinfo.Read(r)
 	if err != nil {
 		return nil, nil, convertError(err)
+	}
+
+	if len(info.Deps) > 0 {
+		// get build id
+		buildID, err = getBuildID(r)
+		if err != nil {
+			warnings = []string{err.Error()}
+		}
 	}
 
 	libs := make([]types.Library, 0, len(info.Deps))
@@ -61,15 +68,6 @@ func (p *Parser) Parse(r dio.ReadSeekerAt) ([]types.Library, []types.Dependency,
 		mod := dep
 		if dep.Replace != nil {
 			mod = dep.Replace
-		}
-
-		if !checkBuildID {
-			// get build id
-			buildID, err = getBuildID(r)
-			if err != nil {
-				warnings = []string{err.Error()}
-			}
-			checkBuildID = true
 		}
 
 		libs = append(libs, types.Library{
