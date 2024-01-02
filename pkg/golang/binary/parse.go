@@ -2,6 +2,8 @@ package binary
 
 import (
 	"debug/buildinfo"
+	"debug/elf"
+	"fmt"
 	"strings"
 
 	"golang.org/x/xerrors"
@@ -37,6 +39,10 @@ func NewParser() types.Parser {
 
 // Parse scans file to try to report the Go and module versions.
 func (p *Parser) Parse(r dio.ReadSeekerAt) ([]types.Library, []types.Dependency, error) {
+	var warnings []string
+	var checkBuildID bool
+	var buildID string
+
 	info, err := buildinfo.Read(r)
 	if err != nil {
 		return nil, nil, convertError(err)
@@ -57,11 +63,38 @@ func (p *Parser) Parse(r dio.ReadSeekerAt) ([]types.Library, []types.Dependency,
 			mod = dep.Replace
 		}
 
+		if !checkBuildID {
+			// get build id
+			buildID, err = getBuildID(r)
+			if err != nil {
+				warnings = []string{err.Error()}
+			}
+			checkBuildID = true
+		}
+
 		libs = append(libs, types.Library{
-			Name:    mod.Path,
-			Version: mod.Version,
+			Name:     mod.Path,
+			Version:  mod.Version,
+			BuildID:  buildID,
+			Warnings: warnings,
 		})
 	}
 
 	return libs, nil, nil
+}
+
+func getBuildID(r dio.ReadSeekerAt) (string, error) {
+	file, err := elf.NewFile(r)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	for _, section := range file.Sections {
+		if section.Name == ".note.go.buildid" {
+			data, _ := section.Data()
+			return string(data[16:]), nil
+		}
+	}
+	return "", fmt.Errorf("Go BuildID not found")
 }

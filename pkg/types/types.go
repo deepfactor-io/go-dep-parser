@@ -13,6 +13,7 @@ type Library struct {
 	Locations          Locations     `json:",omitempty"`
 	FilePath           string        `json:",omitempty"` // Required to show nested jars
 	Warnings           []string      `json:",omitempty"`
+	BuildID            string        `json:",omitempty"`
 }
 
 type Libraries []Library
