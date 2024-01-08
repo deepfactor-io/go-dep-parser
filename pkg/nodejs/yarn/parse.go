@@ -19,7 +19,7 @@ import (
 var (
 	yarnPatternRegexp    = regexp.MustCompile(`^\s?\\?"?(?P<package>\S+?)@(?:(?P<protocol>\S+?):)?(?P<version>.+?)\\?"?:?$`)
 	yarnVersionRegexp    = regexp.MustCompile(`^"?version:?"?\s+"?(?P<version>[^"]+)"?`)
-	yarnDependencyRegexp = regexp.MustCompile(`\s{4,}"?(?P<package>.+?)"?:?\s"?(?P<version>[^"]+)"?`)
+	yarnDependencyRegexp = regexp.MustCompile(`\s{4,}"?(?P<package>.+?)"?:?\s"?(?:(?P<protocol>\S+?):)?(?P<version>[^"]+)"?`)
 )
 
 type LockFile struct {
@@ -104,7 +104,10 @@ func getDependency(target string) (name, version string, err error) {
 	if len(capture) < 3 {
 		return "", "", xerrors.New("not dependency")
 	}
-	return capture[1], capture[2], nil
+	if !validProtocol(capture[2]) {
+		return "", "", nil
+	}
+	return capture[1], capture[3], nil
 }
 
 func validProtocol(protocol string) bool {
