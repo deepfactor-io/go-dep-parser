@@ -58,6 +58,14 @@ func (p *Parser) Parse(r dio.ReadSeekerAt) ([]types.Library, []types.Dependency,
 	p.populateDeps(lockFile.Packages, libs, foundDeps, false)
 	p.populateDeps(lockFile.DevPackages, libs, foundDeps, true)
 
+	// clean up deps with no metadata
+	// this is to handle cases where a package is part of require but we have not explicit entry with metadata for the same
+	for key, lib := range libs {
+		if len(lib.Name) == 0 {
+			delete(libs, key)
+		}
+	}
+
 	// fill deps versions
 	var deps []types.Dependency
 	for libID, depsOn := range foundDeps {
