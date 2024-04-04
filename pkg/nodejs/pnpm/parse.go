@@ -8,9 +8,9 @@ import (
 	"golang.org/x/xerrors"
 	"gopkg.in/yaml.v3"
 
+	"github.com/aquasecurity/go-version/pkg/semver"
 	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
 	"github.com/deepfactor-io/go-dep-parser/pkg/log"
-	"github.com/aquasecurity/go-version/pkg/semver"
 	"github.com/deepfactor-io/go-dep-parser/pkg/types"
 )
 
@@ -78,7 +78,16 @@ func (p *Parser) parse(lockVer float64, lockFile LockFile) ([]types.Library, []t
 		version := info.Version
 
 		if name == "" {
-			name, version = parsePackage(depPath, lockVer)
+			var pathVersion string
+			name, pathVersion = parsePackage(depPath, lockVer)
+
+			// Utilize version info from depPath
+			// eg:
+			// '@types/mz@0.0.32':
+			// 		resolution: {integrity: sha512-cy3yebKhrHuOcrJGkfwNHhpTXQLgmXSv1BX+4p32j+VUQ6aP2eJ5cL7OvGcAQx75fCTFaAIIAKewvqL+iwSd4g==}
+			if version == "" && pathVersion != "" {
+				version = pathVersion
+			}
 		}
 		pkgID := p.ID(name, version)
 
@@ -140,12 +149,19 @@ func parsePackage(depPath string, lockFileVersion float64) (string, string) {
 }
 
 func parseDepPath(depPath, versionSep string) (string, string) {
+	// Handle git protocol dep
+	if strings.Contains(depPath, "@https://") {
+		depPath, _, _ = strings.Cut(depPath, "@https://")
+	}
 	// Skip registry
 	// e.g.
 	//    - "registry.npmjs.org/lodash/4.17.10" => "lodash/4.17.10"
 	//    - "registry.npmjs.org/@babel/generator/7.21.9" => "@babel/generator/7.21.9"
 	//    - "/lodash/4.17.10" => "lodash/4.17.10"
-	_, depPath, _ = strings.Cut(depPath, "/")
+	//    - "is-positive@1.3" => "is-positive@1.3"
+	if strings.Contains(depPath, "/") {
+		_, depPath, _ = strings.Cut(depPath, "/")
+	}
 
 	// Parse scope
 	// e.g.
@@ -173,8 +189,7 @@ func parseDepPath(depPath, versionSep string) (string, string) {
 		version = version[:idx]
 	}
 	if _, err := semver.Parse(version); err != nil {
-		log.Logger.Debugf("Skip %q package. %q doesn't match semver: %s", depPath, version, err)
-		return "", ""
+		return name, ""
 	}
 	return name, version
 }
