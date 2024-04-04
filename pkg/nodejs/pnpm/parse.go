@@ -8,9 +8,9 @@ import (
 	"golang.org/x/xerrors"
 	"gopkg.in/yaml.v3"
 
+	"github.com/aquasecurity/go-version/pkg/semver"
 	dio "github.com/deepfactor-io/go-dep-parser/pkg/io"
 	"github.com/deepfactor-io/go-dep-parser/pkg/log"
-	"github.com/aquasecurity/go-version/pkg/semver"
 	"github.com/deepfactor-io/go-dep-parser/pkg/types"
 )
 
@@ -71,15 +71,23 @@ func (p *Parser) parse(lockVer float64, lockFile LockFile) ([]types.Library, []t
 			continue
 		}
 
-		// Packages from tarball have `name` and `version` fields.
-		// cf. https://github.com/pnpm/spec/blob/ad27a225f81d9215becadfa540ef05fa4ad6dd60/lockfile/5.2.md#packagesdependencypathname
+		// Dependency name may be present in dependencyPath or Name field. Same for Version.
+		// e.g. packages installed from local directory or tarball
+		// cf. https://github.com/pnpm/spec/blob/274ff02de23376ad59773a9f25ecfedd03a41f64/lockfile/6.0.md#packagesdependencypathname
 		name := info.Name
 		version := info.Version
 
-		// Other packages don't have these fields.
-		// Parse `dependencyPath` to determine name and version.
-		if info.Resolution.Tarball == "" {
-			name, version = parsePackage(depPath, lockVer)
+		if name == "" {
+			var pathVersion string
+			name, pathVersion = parsePackage(depPath, lockVer)
+
+			// Utilize version info from depPath
+			// eg:
+			// '@types/mz@0.0.32':
+			// 		resolution: {integrity: sha512-cy3yebKhrHuOcrJGkfwNHhpTXQLgmXSv1BX+4p32j+VUQ6aP2eJ5cL7OvGcAQx75fCTFaAIIAKewvqL+iwSd4g==}
+			if version == "" && pathVersion != "" {
+				version = pathVersion
+			}
 		}
 		pkgID := p.ID(name, version)
 
@@ -141,12 +149,19 @@ func parsePackage(depPath string, lockFileVersion float64) (string, string) {
 }
 
 func parseDepPath(depPath, versionSep string) (string, string) {
+	// Handle git protocol dep
+	if strings.Contains(depPath, "@https://") {
+		depPath, _, _ = strings.Cut(depPath, "@https://")
+	}
 	// Skip registry
 	// e.g.
 	//    - "registry.npmjs.org/lodash/4.17.10" => "lodash/4.17.10"
 	//    - "registry.npmjs.org/@babel/generator/7.21.9" => "@babel/generator/7.21.9"
 	//    - "/lodash/4.17.10" => "lodash/4.17.10"
-	_, depPath, _ = strings.Cut(depPath, "/")
+	//    - "is-positive@1.3" => "is-positive@1.3"
+	if strings.Contains(depPath, "/") {
+		_, depPath, _ = strings.Cut(depPath, "/")
+	}
 
 	// Parse scope
 	// e.g.
@@ -174,8 +189,7 @@ func parseDepPath(depPath, versionSep string) (string, string) {
 		version = version[:idx]
 	}
 	if _, err := semver.Parse(version); err != nil {
-		log.Logger.Debugf("Skip %q package. %q doesn't match semver: %s", depPath, version, err)
-		return "", ""
+		return name, ""
 	}
 	return name, version
 }
