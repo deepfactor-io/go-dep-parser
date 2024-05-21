@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/deepfactor-io/go-dep-parser/pkg/utils"
 	"github.com/deepfactor-io/go-dep-parser/pkg/types"
+	"github.com/deepfactor-io/go-dep-parser/pkg/utils"
 	"golang.org/x/xerrors"
 )
 
@@ -25,6 +25,26 @@ type Package struct {
 	OptionalDependencies map[string]string
 	DevDependencies      map[string]string
 	Workspaces           []string
+}
+
+func (p Package) PackageID() string {
+	return p.ID
+}
+
+func (p Package) DeclaredLicense() string {
+	return p.License
+}
+
+func (p Package) PackageDependencies() map[string]string {
+	return p.Dependencies
+}
+
+func (p Package) PackageDevDependencies() map[string]string {
+	return p.DevDependencies
+}
+
+func (p Package) PackageLibrary() types.Library {
+	return p.Library
 }
 
 type Parser struct{}
