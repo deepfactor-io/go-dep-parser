@@ -1,7 +1,7 @@
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/toml v0.4.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
-github.com/aquasecurity/go-dep-parser v0.0.0-20211224170007-df43bca6b6ff h1:JCKEV3TgUNh9fn+8hXyIdsF9yErA0rUbCkgt2flRKt4=
-github.com/aquasecurity/go-dep-parser v0.0.0-20211224170007-df43bca6b6ff/go.mod h1:8fJ//Ob6/03lxbn4xa1F+G/giVtiVLxnZNpBp5xOxNk=
+github.com/deepfactor-io/go-dep-parser v0.0.0-20211224170007-df43bca6b6ff h1:JCKEV3TgUNh9fn+8hXyIdsF9yErA0rUbCkgt2flRKt4=
+github.com/deepfactor-io/go-dep-parser v0.0.0-20211224170007-df43bca6b6ff/go.mod h1:8fJ//Ob6/03lxbn4xa1F+G/giVtiVLxnZNpBp5xOxNk=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

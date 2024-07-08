@@ -121,10 +121,10 @@ func TestModuleID(t *testing.T) {
 		{
 			name: "pseudo version",
 			args: args{
-				name:    "github.com/aquasecurity/go-dep-parser",
+				name:    "github.com/deepfactor-io/go-dep-parser",
 				version: "0.0.0-20230130190635-5e31092b0621",
 			},
-			want: "github.com/aquasecurity/go-dep-parser@v0.0.0-20230130190635-5e31092b0621",
+			want: "github.com/deepfactor-io/go-dep-parser@v0.0.0-20230130190635-5e31092b0621",
 		},
 	}
 	for _, tt := range tests {

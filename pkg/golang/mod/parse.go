@@ -156,7 +156,7 @@ func lessThan117(ver string) bool {
 
 // ModuleID returns a module ID according the Go way.
 // Format: <module_name>@v<module_version>
-// e.g. github.com/aquasecurity/go-dep-parser@v0.0.0-20230130190635-5e31092b0621
+// e.g. github.com/deepfactor-io/go-dep-parser@v0.0.0-20230130190635-5e31092b0621
 func ModuleID(name, version string) string {
 	return fmt.Sprintf("%s@v%s", name, version)
 }

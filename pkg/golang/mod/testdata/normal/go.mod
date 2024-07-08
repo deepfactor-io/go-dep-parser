@@ -2,7 +2,7 @@ module github.com/org/repo
 
 go 1.17
 
-require github.com/aquasecurity/go-dep-parser v0.0.0-20211224170007-df43bca6b6ff
+require github.com/deepfactor-io/go-dep-parser v0.0.0-20211224170007-df43bca6b6ff
 
 require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect

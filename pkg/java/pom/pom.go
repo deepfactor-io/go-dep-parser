@@ -4,11 +4,16 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"maps"
 	"reflect"
 	"strings"
 
-	"github.com/deepfactor-io/go-dep-parser/pkg/utils"
+	"golang.org/x/xerrors"
+
 	"github.com/samber/lo"
+
+	"github.com/deepfactor-io/go-dep-parser/pkg/types"
+	"github.com/deepfactor-io/go-dep-parser/pkg/utils"
 )
 
 type pom struct {
@@ -183,6 +188,8 @@ type pomDependency struct {
 	Scope      string        `xml:"scope"`
 	Optional   bool          `xml:"optional"`
 	Exclusions pomExclusions `xml:"exclusions"`
+	StartLine  int
+	EndLine    int
 }
 
 type pomExclusions struct {
@@ -211,6 +218,8 @@ func (d pomDependency) Resolve(props map[string]string, depManagement, rootDepMa
 		Scope:      evaluateVariable(d.Scope, props, nil),
 		Optional:   d.Optional,
 		Exclusions: d.Exclusions,
+		StartLine:  d.StartLine,
+		EndLine:    d.EndLine,
 	}
 
 	// If this dependency is managed in the root POM,
@@ -252,18 +261,34 @@ func (d pomDependency) Resolve(props map[string]string, depManagement, rootDepMa
 
 // ToArtifact converts dependency to artifact.
 // It should be called after calling Resolve() so that variables can be evaluated.
-func (d pomDependency) ToArtifact(exclusions map[string]struct{}) artifact {
-	if exclusions == nil {
-		exclusions = map[string]struct{}{}
+func (d pomDependency) ToArtifact(opts analysisOptions) artifact {
+	// To avoid shadow adding exclusions to top pom's,
+	// we need to initialize a new map for each new artifact
+	// See `exclusions in child` test for more information
+	exclusions := map[string]struct{}{}
+	if opts.exclusions != nil {
+		exclusions = maps.Clone(opts.exclusions)
 	}
 	for _, e := range d.Exclusions.Exclusion {
 		exclusions[fmt.Sprintf("%s:%s", e.GroupID, e.ArtifactID)] = struct{}{}
 	}
+
+	var locations types.Locations
+	if opts.lineNumber {
+		locations = types.Locations{
+			{
+				StartLine: d.StartLine,
+				EndLine:   d.EndLine,
+			},
+		}
+	}
+
 	return artifact{
 		GroupID:    d.GroupID,
 		ArtifactID: d.ArtifactID,
 		Version:    newVersion(d.Version),
 		Exclusions: exclusions,
+		Locations:  locations,
 	}
 }
 
@@ -274,7 +299,7 @@ type property struct {
 	Value   string `xml:",chardata"`
 }
 
-func (props *properties) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+func (props *properties) UnmarshalXML(d *xml.Decoder, _ xml.StartElement) error {
 	*props = properties{}
 	for {
 		var p property
@@ -282,10 +307,40 @@ func (props *properties) UnmarshalXML(d *xml.Decoder, start xml.StartElement) er
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			return err
+			return xerrors.Errorf("XML decode error: %w", err)
 		}
 
 		(*props)[p.XMLName.Local] = p.Value
+	}
+	return nil
+}
+
+func (deps *pomDependencies) UnmarshalXML(d *xml.Decoder, _ xml.StartElement) error {
+	for {
+		token, err := d.Token()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return xerrors.Errorf("XML decode error: %w", err)
+		}
+
+		switch t := token.(type) {
+		case xml.StartElement:
+			if t.Name.Local == "dependency" {
+				var dep pomDependency
+				dep.StartLine, _ = d.InputPos() // <dependency> tag starts
+
+				// Decode the <dependency> element
+				err = d.DecodeElement(&dep, &t)
+				if err != nil {
+					return xerrors.Errorf("Error decoding dependency: %w")
+				}
+
+				dep.EndLine, _ = d.InputPos() // <dependency> tag ends
+
+				deps.Dependency = append(deps.Dependency, dep)
+			}
+		}
 	}
 	return nil
 }
