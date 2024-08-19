@@ -176,9 +176,18 @@ func (p *Parser) parseV2(packages map[string]Package) ([]types.Library, []types.
 // node_modules/func1 -> link to target
 // see `package-lock_v3_with_workspace.json` to better understanding
 func resolveLinks(packages map[string]Package) {
-	links := lo.PickBy(packages, func(_ string, pkg Package) bool {
-		return pkg.Link
+	links := lo.PickBy(packages, func(pkgPath string, pkg Package) bool {
+		if !pkg.Link {
+			return false
+		}
+		if pkg.Resolved == "" {
+			log.Logger.Warnf("`package-lock.json` contains broken link with empty `resolved` field. %s package will be skipped to avoid receiving an empty package", pkgPath)
+			delete(packages, pkgPath)
+			return false
+		}
+		return true
 	})
+
 	// Early return
 	if len(links) == 0 {
 		return
@@ -190,7 +199,7 @@ func resolveLinks(packages map[string]Package) {
 	}
 
 	workspaces := rootPkg.Workspaces
-	for pkgPath, pkg := range packages {
+	for pkgPath, pkg := range maps.Clone(packages) {
 		for linkPath, link := range links {
 			if !strings.HasPrefix(pkgPath, link.Resolved) {
 				continue
